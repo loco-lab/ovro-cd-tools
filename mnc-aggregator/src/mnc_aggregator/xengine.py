@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta, timezone
 
 from .interface import AggregateMonitorPoint, MonitorAggregator
 
@@ -9,6 +10,8 @@ class XEngingeMonitor(MonitorAggregator):
         for gpu in range(1, 9)
         for pipeline in range(4)
     ]
+
+    stale_timestamp = 120.0
 
     def aggregate_monitor_points(self) -> list[AggregateMonitorPoint]:
         monitor_points = []
@@ -28,6 +31,10 @@ class XEngingeMonitor(MonitorAggregator):
                 self.client.get(f"/mon/corr/x/{gpu}/pipeline/{pipeline}/Corr/0")[0]
             )
 
+            copy_stats = json.loads(
+                self.client.get(f"/mon/corr/x/{gpu}/pipeline/{pipeline}/Copy/0")[0]
+            )
+
             if "stats" in corr_stats and isinstance(corr_stats["stats"], dict):
                 state_dict = corr_stats["stats"]
                 if "state" in state_dict and isinstance(state_dict["state"], str):
@@ -39,12 +46,20 @@ class XEngingeMonitor(MonitorAggregator):
             else:
                 corr_running = False
 
+            corr_timestamp = corr_stats["time"]
+            corr_running = corr_running & (
+                datetime.fromtimestamp(corr_timestamp) - datetime.now(timezone.utc)
+                < timedelta(seconds=self.stale_timestamp)
+            )
+
             fields = {
                 "capture_timestamp": capture_stats["time"],
                 "capture_rate": capture_stats["gbps"],
-                "corr_timestamp": corr_stats["time"],
+                "corr_timestamp": corr_timestamp,
                 "corr_rate": corr_stats["gbps"],
                 "corr_is_running": corr_running,
+                "copy_timestamp": copy_stats["time"],
+                "copy_rate": copy_stats["gbps"],
             }
             monitor_points.append(AggregateMonitorPoint(path, tagname, fields))
 

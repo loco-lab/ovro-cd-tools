@@ -17,7 +17,9 @@ class AggregateMonitorPoint:
     tagname: influxtag
     fields: dict
 
-    def __init__(self, path: str, tagname: influxtag, fields: dict, **kwargs):
+    def __init__(
+        self, path: str, tagname: influxtag, fields: dict | None = None, **kwargs
+    ):
         """An aggregated monitor point meant to be summary of a subsystem.
 
         Arguments
@@ -32,10 +34,12 @@ class AggregateMonitorPoint:
         self.timestamp = datetime.now(timezone.utc)
         self.path = path
         self.tagname = tagname
+        if fields is None:
+            fields = {}
         self.fields = fields | kwargs
 
     def to_json(self) -> str:
-        json.dumps(
+        return json.dumps(
             {
                 "time": self.timestamp.timestamp(),
                 self.tagname[0]: self.tagname[1],
