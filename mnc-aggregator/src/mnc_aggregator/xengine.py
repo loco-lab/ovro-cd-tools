@@ -18,7 +18,7 @@ class XEngingeMonitor(MonitorAggregator):
 
         for hostname in self.hostnames:
             tagname = ("pipelinehost", hostname)
-            path = f"mon/x/summary/{hostname}"
+            path = f"/mon/x/summary/{hostname}"
             gpu, pipeline = hostname.split("-")
 
             capture_stats = json.loads(
