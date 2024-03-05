@@ -24,7 +24,7 @@
   "setuptools_scm",
   "structlog>=21.0.0",
   "termcolor",
-  "tftpy=0.8.0",
+  "tftpy==0.8.0",
  ]
  name = "mnc_aggregator"
  description = """Defines interfaces for aggregating multiple etcd monitor points into a single summary.
