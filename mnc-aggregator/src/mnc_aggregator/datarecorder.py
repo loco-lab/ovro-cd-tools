@@ -1,6 +1,5 @@
 import json
 import re
-from datetime import datetime, timedelta, timezone
 
 from .interface import AggregateMonitorPoint, MonitorAggregator
 
@@ -24,7 +23,8 @@ class DataRecorderMonitor(MonitorAggregator):
             if not key.endswith(self.key_suffixes):
                 continue
 
-            tagname = DATA_RECORDER_REGEX.mtch(key).groupdict()["dr"]
+            val = json.loads(val)
+            tagname = DATA_RECORDER_REGEX.match(key).groupdict()["dr"]
 
             # take the last bit off the key to get the influx entry name
             field_name = self.field_mapping[key.split("/")[-1]]
@@ -44,7 +44,8 @@ class DataRecorderMonitor(MonitorAggregator):
                 if not key.endswith(self.key_suffixes):
                     continue
 
-                tagname = DATA_RECORDER_REGEX.mtch(key).groupdict()["dr"]
+                val = json.loads(val)
+                tagname = DATA_RECORDER_REGEX.match(key).groupdict()["dr"]
 
                 # take the last bit off the key to get the influx entry name
                 field_name = self.field_mapping[key.split("/")[-1]]
