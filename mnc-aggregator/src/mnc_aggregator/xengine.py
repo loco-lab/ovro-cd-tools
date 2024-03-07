@@ -48,7 +48,8 @@ class XEngingeMonitor(MonitorAggregator):
 
             corr_timestamp = corr_stats["time"]
             corr_running = corr_running & (
-                datetime.fromtimestamp(corr_timestamp) - datetime.now(timezone.utc)
+                datetime.fromtimestamp(corr_timestamp, timezone.utc)
+                - datetime.now(timezone.utc)
                 < timedelta(seconds=self.stale_timestamp)
             )
 
