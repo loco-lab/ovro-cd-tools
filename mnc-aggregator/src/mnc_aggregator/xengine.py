@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from .interface import AggregateMonitorPoint, MonitorAggregator
 
 
-class XEngingeMonitor(MonitorAggregator):
+class XEngineMonitor(MonitorAggregator):
     hostnames = [
         f"lxdlwagpu{gpu:0>2d}-{pipeline:0>1d}"
         for gpu in range(1, 9)
@@ -53,11 +53,11 @@ class XEngingeMonitor(MonitorAggregator):
             corr_running = corr_running & corr_recent
 
             capture_recent = datetime.fromtimestamp(
-                capture_stats["timestamp"], timezone.utc
+                capture_stats["time"], timezone.utc
             ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
 
             copy_recent = datetime.fromtimestamp(
-                copy_stats["timestamp"], timezone.utc
+                copy_stats["time"], timezone.utc
             ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
 
             fields = {
