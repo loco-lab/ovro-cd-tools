@@ -3,5 +3,6 @@
 # All rights reserved.
 
 
+from .datarecorder import DataRecorderMonitor  # noqa: F401
 from .interface import AggregateMonitorPoint, MonitorAggregator  # noqa: F401
 from .xengine import XEngingeMonitor  # noqa: F401
