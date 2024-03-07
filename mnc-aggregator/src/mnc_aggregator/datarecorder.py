@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import datetime, timedelta, timezone
 
 from .interface import AggregateMonitorPoint, MonitorAggregator
 
@@ -15,6 +16,8 @@ class DataRecorderMonitor(MonitorAggregator):
         "summary": "recorder_status",
     }
 
+    stale_timestamp = 120.0
+
     def aggregate_monitor_points(self) -> list[AggregateMonitorPoint]:
         points = {}
 
@@ -28,10 +31,15 @@ class DataRecorderMonitor(MonitorAggregator):
 
             # take the last bit off the key to get the influx entry name
             field_name = self.field_mapping[key.split("/")[-1]]
+
+            recent = datetime.fromtimestamp(
+                val["timestamp"], timezone.utc
+            ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
+
             point = AggregateMonitorPoint(
                 f"/mon/dr/summary/{tagname}",
                 ("dr", tagname),
-                {field_name: val["value"], "recorder_timestamp": val["timestamp"]},
+                {field_name: val["value"], f"{field_name}_recent": recent},
             )
             if tagname in points:
                 points[tagname].__iadd__(point, True)
@@ -49,14 +57,18 @@ class DataRecorderMonitor(MonitorAggregator):
 
                 # take the last bit off the key to get the influx entry name
                 field_name = self.field_mapping[key.split("/")[-1]]
+                recent = datetime.fromtimestamp(
+                    val["timestamp"], timezone.utc
+                ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
+
                 point = AggregateMonitorPoint(
                     f"/mon/dr/summary/{tagname}",
                     ("dr", tagname),
-                    {field_name: val["value"], "recorder_timestamp": val["timestamp"]},
+                    {field_name: val["value"], f"{field_name}_recent": recent},
                 )
                 if tagname in points:
                     points[tagname].__iadd__(point, True)
                 else:
                     points[tagname] = point
 
-        return points
+        return list(points.values())

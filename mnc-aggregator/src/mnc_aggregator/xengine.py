@@ -47,19 +47,26 @@ class XEngingeMonitor(MonitorAggregator):
                 corr_running = False
 
             corr_timestamp = corr_stats["time"]
-            corr_running = corr_running & (
-                datetime.fromtimestamp(corr_timestamp, timezone.utc)
-                - datetime.now(timezone.utc)
-                < timedelta(seconds=self.stale_timestamp)
-            )
+            corr_recent = datetime.fromtimestamp(
+                corr_timestamp, timezone.utc
+            ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
+            corr_running = corr_running & corr_recent
+
+            capture_recent = datetime.fromtimestamp(
+                capture_stats["timestamp"], timezone.utc
+            ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
+
+            copy_recent = datetime.fromtimestamp(
+                copy_stats["timestamp"], timezone.utc
+            ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
 
             fields = {
-                "capture_timestamp": capture_stats["time"],
+                "capture_recent": capture_recent,
                 "capture_rate": capture_stats["gbps"],
-                "corr_timestamp": corr_timestamp,
+                "corr_recent": corr_recent,
                 "corr_rate": corr_stats["gbps"],
                 "corr_is_running": corr_running,
-                "copy_timestamp": copy_stats["time"],
+                "copy_recent": copy_recent,
                 "copy_rate": copy_stats["gbps"],
             }
             monitor_points.append(AggregateMonitorPoint(path, tagname, fields))
