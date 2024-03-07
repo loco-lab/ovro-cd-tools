@@ -3,3 +3,4 @@
 mnc-aggregator/src/mnc_aggregator/__pycache__/
 
 mnc-aggregator/src/mnc_aggregator/tests/__pycache__/
+mnc-aggregator/src/mnc_aggregator/version.py
