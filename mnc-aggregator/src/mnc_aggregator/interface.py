@@ -1,7 +1,7 @@
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import Self, TypeAlias
 
 import etcd3
 from astropy.time import Time
@@ -24,7 +24,9 @@ class AggregateMonitorPoint:
 
         Arguments
         ---------
-        path: (str, str)
+        path: str
+            The new key path for the AggregateMonitorPoint to be placed into etcd3
+        tagname: (str, str)
             A tuple pair of strings containing the name of the influx tag and its value.
             e.g. ("pipelinehost", "lxdlwagpu02-1")
         fields: dict
@@ -37,6 +39,42 @@ class AggregateMonitorPoint:
         if fields is None:
             fields = {}
         self.fields = fields | kwargs
+
+    def __add__(
+        self: Self, other: Self, overwrite_timestamp=False, inplace=False
+    ) -> Self:
+        if self.__class__ != other.__class__:
+            raise ValueError(
+                "Only AggregeateMonitorPoints of the same class may be added together."
+            )
+        if not overwrite_timestamp and self.timestamp != other.timestamp:
+            raise ValueError(
+                "AggregateMonitorPoints must have the same timestamp to add together."
+            )
+        if self.tagname != other.tagname:
+            raise ValueError(
+                "AggregateMonitorPoints must have the same tagname to add together."
+            )
+        if self.path != other.path:
+            raise ValueError(
+                "AggregateMonitorPoints must have the same etcd3 path to add together."
+            )
+
+        fields = self.fields | other.fields
+
+        if inplace:
+            out = self
+        else:
+            out = AggregateMonitorPoint(self.path, self.tagname)
+            out.timestamp = self.timestamp
+
+        out.fields = fields
+        if not inplace:
+            return out
+
+    def __iadd__(self: Self, other: Self, overwrite_timestamp=False) -> Self:
+        self.__add__(other, overwrite_timestamp, inplace=True)
+        return self
 
     def to_json(self) -> str:
         return json.dumps(
@@ -58,7 +96,17 @@ class MonitorAggregator(ABC):
     def __init__(self) -> None:
         super().__init__()
 
-        self.client = etcd3.client(host=ETCD_HOST, port=ETCD_PORT)
+        # allow big message lengths from the server
+        # there are sometimes lots of keys (like from the datarecorders)
+        # this allows us to receive all key, value pairs
+        self.client = etcd3.client(
+            host=ETCD_HOST,
+            port=ETCD_PORT,
+            grpc_options=[
+                ("grpc.max_receive_message_length", -1),
+                ("grpc.max_send_message_length", -1),
+            ],
+        )
 
     @abstractmethod
     def aggregate_monitor_points(self) -> list[AggregateMonitorPoint]:

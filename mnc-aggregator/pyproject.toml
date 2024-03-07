@@ -36,6 +36,9 @@
  dynamic = [ "version" ]
 
 
+ [project.optional-dependencies]
+  dev = [ "pytest>=8" ]
+
 [tool.hatch]
  version.source               = "vcs"
  version.raw-options          = { root = ".." }
