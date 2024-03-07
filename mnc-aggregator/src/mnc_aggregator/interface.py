@@ -1,10 +1,10 @@
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import TypeAlias
 
 import etcd3
+from astropy.time import Time
 from mnc.common import ETCD_HOST, ETCD_PORT
 
 influxtag: TypeAlias = tuple[str, str]
@@ -12,7 +12,7 @@ influxtag: TypeAlias = tuple[str, str]
 
 @dataclass
 class AggregateMonitorPoint:
-    timestamp: datetime
+    timestamp: Time
     path: str
     tagname: influxtag
     fields: dict
@@ -31,7 +31,7 @@ class AggregateMonitorPoint:
             A dictionary of key, value pairs for all fields in this datapoint.
             The key, value pairs may also be passed as additional kwargs to init.
         """
-        self.timestamp = datetime.now(timezone.utc)
+        self.timestamp = Time.now()
         self.path = path
         self.tagname = tagname
         if fields is None:
@@ -41,7 +41,7 @@ class AggregateMonitorPoint:
     def to_json(self) -> str:
         return json.dumps(
             {
-                "time": self.timestamp.timestamp(),
+                "time": self.timestamp.mjd,
                 self.tagname[0]: self.tagname[1],
                 **self.fields,
             }
