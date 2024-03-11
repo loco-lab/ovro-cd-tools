@@ -15,7 +15,7 @@ class DefaultRaw(
     pass
 
 
-# This is the list of Subsystems the for with the MonitorAggregator have been defined.
+# This is the list of Subsystems for which MonitorAggregator have been defined.
 # These will be iterated over and the summaries written to etcd.
 # If a new subsystem is implemented it only needs to be added to this list.
 MonitorClasses: list[MonitorAggregator] = [
