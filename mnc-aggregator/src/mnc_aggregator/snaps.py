@@ -22,9 +22,9 @@ class SnapMonitor(MonitorAggregator):
 
             val = json.loads(val)
 
-            recent = recent = datetime.fromtimestamp(
-                val["timestamp"], timezone.utc
-            ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
+            recent = recent = datetime.fromisoformat(val["timestamp"]) - datetime.now(
+                timezone.utc
+            ) < timedelta(seconds=self.stale_timestamp)
 
             if key.casefold().endswith("status"):
                 point = AggregateMonitorPoint(
