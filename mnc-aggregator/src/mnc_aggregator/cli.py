@@ -44,7 +44,7 @@ def main():
         type=float,
         default=60.0,
         help=(
-            "The interval at which to poll all subsystems for new statistics."
+            "The interval in seconds at which to poll all subsystems for new statistics."
             "This script will wait this long in between each aggregation run."
         ),
     )
