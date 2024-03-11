@@ -28,11 +28,10 @@ class SnapMonitor(MonitorAggregator):
 
             val = json.loads(val)
 
-            recent = recent = datetime.fromisoformat(val["timestamp"]) - datetime.now(
-                timezone.utc
-            ) < timedelta(seconds=self.stale_timestamp)
-
             if key.casefold().endswith("status"):
+                recent = recent = datetime.fromisoformat(
+                    val["timestamp"]
+                ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
                 point = AggregateMonitorPoint(
                     f"/mon/snap/summary/{snapnum}",
                     ("snap", snapnum),
@@ -41,6 +40,10 @@ class SnapMonitor(MonitorAggregator):
 
             # look for keys ending in the snap number too
             elif key.casefold().endswith(snapnum):
+                recent = recent = datetime.fromisoformat(
+                    val["timestamp"]
+                ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
+
                 eth_gbps = None
                 stats = val.get("stats")
                 if isinstance(stats, dict):
