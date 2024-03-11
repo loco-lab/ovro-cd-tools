@@ -39,6 +39,10 @@
  [project.optional-dependencies]
   dev = [ "pytest>=8" ]
 
+ [project.scripts]
+  aggregate_monitor_points = "mnc_aggregator.cli:main"
+
+
 [tool.hatch]
  version.source               = "vcs"
  version.raw-options          = { root = ".." }
