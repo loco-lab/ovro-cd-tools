@@ -1,10 +1,16 @@
 import json
 from datetime import datetime, timedelta, timezone
 
-from .interface import AggregateMonitorPoint, MonitorAggregator
+from ..interface import AggregateMonitorPoint, MonitorAggregator
 
 
 class SnapMonitor(MonitorAggregator):
+    """The Snap (e.g. f-engine) interface for Monitor Point aggregation.
+
+    Looks at all snaps with the prefix /mon/snap/ for snaps and takes statistcs from
+    /mon/snap/<snapnum>/status and /mon/snap/<snapnum> and collected into /mon/snap/summary/<snapnum>
+    """
+
     stale_timestamp = 120.0
 
     def aggregate_monitor_points(self) -> list[AggregateMonitorPoint]:
@@ -14,7 +20,7 @@ class SnapMonitor(MonitorAggregator):
             key = metadata.key.decode("utf-8")
 
             # tag will be the snap number
-            tagname = f"snap{key.split('/')[3]}"
+            snapnum = key.split("/")[3]
 
             if key.casefold().endswith("summary"):
                 # ignore the outputs created by this function
@@ -28,13 +34,13 @@ class SnapMonitor(MonitorAggregator):
 
             if key.casefold().endswith("status"):
                 point = AggregateMonitorPoint(
-                    f"/mon/snap/summary/{tagname}",
-                    ("snap", tagname),
+                    f"/mon/snap/summary/{snapnum}",
+                    ("snap", snapnum),
                     {"status_ok": val["ok"], "status_recent": recent},
                 )
 
             # look for keys ending in the snap number too
-            elif key.casefold().endswith(tagname[-2:]):
+            elif key.casefold().endswith(snapnum):
                 eth_gbps = None
                 stats = val.get("stats")
                 if isinstance(stats, dict):
@@ -43,8 +49,8 @@ class SnapMonitor(MonitorAggregator):
                         eth_gbps = eth.get("gbps")
 
                 point = AggregateMonitorPoint(
-                    f"/mon/snap/summary/{tagname}",
-                    ("snap", tagname),
+                    f"/mon/snap/summary/{snapnum}",
+                    ("snap", snapnum),
                     {"eth_gbps": eth_gbps, "eth_recent": recent},
                 )
             else:
@@ -54,9 +60,9 @@ class SnapMonitor(MonitorAggregator):
             # input the points into the mapping dict
             # making use of the addition we defined for this
             # class to combine the stats together.
-            if tagname in points:
-                points[tagname].__iadd__(point, True)
+            if snapnum in points:
+                points[snapnum].__iadd__(point, True)
             else:
-                points[tagname] = point
+                points[snapnum] = point
 
         return list(points.values())

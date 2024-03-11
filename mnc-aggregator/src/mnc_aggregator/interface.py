@@ -43,6 +43,23 @@ class AggregateMonitorPoint:
     def __add__(
         self: Self, other: Self, overwrite_timestamp=False, inplace=False
     ) -> Self:
+        """Add two Monitor Points by joining their fields together.
+
+        Any duplicated fields will be overwritten with data from other.
+
+        Parameters
+        ----------
+        other: AggregateMonitorPoint
+            The other point to add to this one.
+        overwrite_timestamp: bool
+            By default, all metadata must match to combine two monitor points.
+            However by setting this to True, the timestamp on other will be ignored
+            and its fields added to those in self.
+        inplace: bool
+            When true, updates the fields in self without creating a new object.
+
+
+        """
         if self.__class__ != other.__class__:
             raise ValueError(
                 "Only AggregeateMonitorPoints of the same class may be added together."
@@ -87,9 +104,7 @@ class AggregateMonitorPoint:
 
 
 class MonitorAggregator(ABC):
-    """The Absract interface used to aggregate distributed
-    monitor points into as summary of set of summary points.
-    """
+    """The Absract interface used to aggregate distributed monitor points into as summary of set of summary points."""
 
     client: etcd3.Etcd3Client
 
@@ -114,6 +129,8 @@ class MonitorAggregator(ABC):
         Turns the distributed points associated with the given class into a aggregated point.
 
         This function is used as a generic interface for multiple MonitorPoint aggregators.
+        When defining new subsystems to interfaces with this is the only method which needs to be overwritten.
+
 
         Returns
         -------

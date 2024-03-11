@@ -2,7 +2,7 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 
-from .interface import AggregateMonitorPoint, MonitorAggregator
+from ..interface import AggregateMonitorPoint, MonitorAggregator
 
 DATA_RECORDER_REGEX = re.compile(r"\/mon\/(?P<dr>dr[a-z]*\d{0,4})\/.*")
 
