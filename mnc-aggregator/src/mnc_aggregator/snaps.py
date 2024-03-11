@@ -14,7 +14,7 @@ class SnapMonitor(MonitorAggregator):
             key = metadata.key.decode("utf-8")
 
             # tag will be the snap number
-            tagname = f"snap{key.split('/')[2]}"
+            tagname = f"snap{key.split('/')[3]}"
 
             if key.casefold().endswith("summary"):
                 # ignore the outputs created by this function
