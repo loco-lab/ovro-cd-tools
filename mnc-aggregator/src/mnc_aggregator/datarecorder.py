@@ -41,6 +41,9 @@ class DataRecorderMonitor(MonitorAggregator):
                 ("dr", tagname),
                 {field_name: val["value"], f"{field_name}_recent": recent},
             )
+            # input the points into the mapping dict
+            # making use of the addition we defined for this
+            # class to combine the stats together.
             if tagname in points:
                 points[tagname].__iadd__(point, True)
             else:
@@ -66,6 +69,9 @@ class DataRecorderMonitor(MonitorAggregator):
                     ("dr", tagname),
                     {field_name: val["value"], f"{field_name}_recent": recent},
                 )
+                # input the points into the mapping dict
+                # making use of the addition we defined for this
+                # class to combine the stats together.
                 if tagname in points:
                     points[tagname].__iadd__(point, True)
                 else:
