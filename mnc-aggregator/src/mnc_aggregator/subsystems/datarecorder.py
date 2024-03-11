@@ -8,6 +8,15 @@ DATA_RECORDER_REGEX = re.compile(r"\/mon\/(?P<dr>dr[a-z]*\d{0,4})\/.*")
 
 
 class DataRecorderMonitor(MonitorAggregator):
+    """Data Recorder interface to monitor point aggregation.
+
+    Reads all datarecorders with the prefix /mon/dr in etcd and collects
+    - pipeline_lag
+    - rx_rate
+    - summary: status
+
+    """
+
     key_suffixes = ("/bifrost/pipeline_lag", "/bifrost/rx_rate", "/summary")
 
     field_mapping = {

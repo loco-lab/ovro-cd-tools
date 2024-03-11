@@ -8,7 +8,7 @@ class SnapMonitor(MonitorAggregator):
     """The Snap (e.g. f-engine) interface for Monitor Point aggregation.
 
     Looks at all snaps with the prefix /mon/snap/ for snaps and takes statistcs from
-    /mon/snap/<snapnum>/status and /mon/snap/<snapnum> and collected into /mon/snap/summary/<snapnum>
+    /mon/snap/<snapnum>/status and /mon/snap/<snapnum> and collects them into /mon/snap/summary/<snapnum>
     """
 
     stale_timestamp = 120.0

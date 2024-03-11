@@ -5,6 +5,16 @@ from ..interface import AggregateMonitorPoint, MonitorAggregator
 
 
 class XEngineMonitor(MonitorAggregator):
+    """The X-Enginge interface for Monitor Point aggregation.
+
+
+    Collects monitor point data for all xengines in the range [1,8] and pipelines in the range [0,3].
+    Reads keys:
+        - /mon/corr/x/<gpu>/pipeline/<pipeline>/udp_verbs_capture/0
+        - /mon/corr/x/<gpu>/pipeline/<pipeline>/Corr/0
+        - /mon/corr/x/<gpu>/pipeline/<pipeline>/Copy/0
+    """
+
     hostnames = [
         f"lxdlwagpu{gpu:0>2d}-{pipeline:0>1d}"
         for gpu in range(1, 9)
