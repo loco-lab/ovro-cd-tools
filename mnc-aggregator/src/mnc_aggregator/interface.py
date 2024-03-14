@@ -1,7 +1,7 @@
 import json
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Self, TypeAlias
+from typing import TypeAlias
 
 import etcd3
 from mnc.common import ETCD_HOST, ETCD_PORT
@@ -39,8 +39,11 @@ class AggregateMonitorPoint:
         self.fields = fields | kwargs
 
     def __add__(
-        self: Self, other: Self, overwrite_timestamp=False, inplace=False
-    ) -> Self:
+        self: "AggregateMonitorPoint",
+        other: "AggregateMonitorPoint",
+        overwrite_timestamp=False,
+        inplace=False,
+    ) -> "AggregateMonitorPoint":
         """Add two Monitor Points by joining their fields together.
 
         Any duplicated fields will be overwritten with data from other.
@@ -87,7 +90,11 @@ class AggregateMonitorPoint:
         if not inplace:
             return out
 
-    def __iadd__(self: Self, other: Self, overwrite_timestamp=False) -> Self:
+    def __iadd__(
+        self: "AggregateMonitorPoint",
+        other: "AggregateMonitorPoint",
+        overwrite_timestamp=False,
+    ) -> "AggregateMonitorPoint":
         self.__add__(other, overwrite_timestamp, inplace=True)
         return self
 
