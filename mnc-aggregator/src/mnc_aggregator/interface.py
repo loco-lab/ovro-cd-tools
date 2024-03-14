@@ -1,6 +1,5 @@
 import json
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Self, TypeAlias
 
@@ -10,7 +9,6 @@ from mnc.common import ETCD_HOST, ETCD_PORT
 influxtag: TypeAlias = tuple[str, str]
 
 
-@dataclass
 class AggregateMonitorPoint:
     timestamp: datetime
     path: str
