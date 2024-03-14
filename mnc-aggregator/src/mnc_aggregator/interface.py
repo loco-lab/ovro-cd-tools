@@ -34,7 +34,13 @@ class AggregateMonitorPoint:
         self.tagname = tagname
         if fields is None:
             fields = {}
-        self.fields = fields | kwargs
+        self.fields = {**fields, **kwargs}
+
+    def __repr__(self):
+        return (
+            f"AggregateMonitorPoint{{timestamp: {self.timestamp}, "
+            f"path: {self.path}, tagname: {self.tagname}, fields: {self.fields}}}"
+        )
 
     def __add__(
         self: "AggregateMonitorPoint",
@@ -76,7 +82,7 @@ class AggregateMonitorPoint:
                 "AggregateMonitorPoints must have the same etcd3 path to add together."
             )
 
-        fields = self.fields | other.fields
+        fields = {**self.fields, **other.fields}
 
         if inplace:
             out = self

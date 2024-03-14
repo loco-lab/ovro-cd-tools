@@ -31,7 +31,7 @@ class DataRecorderMonitor(MonitorAggregator):
     def aggregate_monitor_points(self) -> List[AggregateMonitorPoint]:
         points = {}
 
-        for val, metadata in self.client.get_range("/mon/dr00", "/mon/dr99"):
+        for val, metadata in self.client.get_prefix("/mon/dr"):
             key = metadata.key.decode("utf-8")
             if not key.endswith(self.key_suffixes):
                 continue
@@ -41,7 +41,6 @@ class DataRecorderMonitor(MonitorAggregator):
 
             # take the last bit off the key to get the influx entry name
             field_name = self.field_mapping[key.split("/")[-1]]
-
             recent = datetime.fromtimestamp(
                 val["timestamp"], timezone.utc
             ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
@@ -58,33 +57,5 @@ class DataRecorderMonitor(MonitorAggregator):
                 points[tagname].__iadd__(point, True)
             else:
                 points[tagname] = point
-
-        for prefix in ["/mon/drvf", "/mon/drvs", "/mon/drt"]:
-            for val, metadata in self.client.get_prefix(prefix):
-                key = metadata.key.decode("utf-8")
-                if not key.endswith(self.key_suffixes):
-                    continue
-
-                val = json.loads(val)
-                tagname = DATA_RECORDER_REGEX.match(key).groupdict()["dr"]
-
-                # take the last bit off the key to get the influx entry name
-                field_name = self.field_mapping[key.split("/")[-1]]
-                recent = datetime.fromtimestamp(
-                    val["timestamp"], timezone.utc
-                ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
-
-                point = AggregateMonitorPoint(
-                    f"/mon/dr/summary/{tagname}",
-                    ("dr", tagname),
-                    {field_name: val["value"], f"{field_name}_recent": recent},
-                )
-                # input the points into the mapping dict
-                # making use of the addition we defined for this
-                # class to combine the stats together.
-                if tagname in points:
-                    points[tagname].__iadd__(point, True)
-                else:
-                    points[tagname] = point
 
         return list(points.values())
