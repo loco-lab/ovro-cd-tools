@@ -2,6 +2,7 @@ import argparse
 import sys
 import time
 import traceback
+from typing import List
 
 from mnc_aggregator.interface import MonitorAggregator
 
@@ -18,7 +19,7 @@ class DefaultRaw(
 # This is the list of Subsystems for which MonitorAggregator have been defined.
 # These will be iterated over and the summaries written to etcd.
 # If a new subsystem is implemented it only needs to be added to this list.
-MonitorClasses: list[MonitorAggregator] = [
+MonitorClasses: List[MonitorAggregator] = [
     SnapMonitor,
     DataRecorderMonitor,
     XEngineMonitor,
