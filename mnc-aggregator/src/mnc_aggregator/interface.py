@@ -1,22 +1,20 @@
 import json
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import TypeAlias
+from typing import List, Tuple
 
 import etcd3
 from mnc.common import ETCD_HOST, ETCD_PORT
-
-influxtag: TypeAlias = tuple[str, str]
 
 
 class AggregateMonitorPoint:
     timestamp: datetime
     path: str
-    tagname: influxtag
+    tagname: Tuple[str, str]
     fields: dict
 
     def __init__(
-        self, path: str, tagname: influxtag, fields: dict | None = None, **kwargs
+        self, path: str, tagname: Tuple[str, str], fields: dict = None, **kwargs
     ):
         """An aggregated monitor point meant to be summary of a subsystem.
 
@@ -129,7 +127,7 @@ class MonitorAggregator(ABC):
         )
 
     @abstractmethod
-    def aggregate_monitor_points(self) -> list[AggregateMonitorPoint]:
+    def aggregate_monitor_points(self) -> List[AggregateMonitorPoint]:
         """
         Turns the distributed points associated with the given class into a aggregated point.
 

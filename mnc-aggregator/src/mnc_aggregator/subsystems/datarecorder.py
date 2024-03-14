@@ -1,6 +1,7 @@
 import json
 import re
 from datetime import datetime, timedelta, timezone
+from typing import List
 
 from ..interface import AggregateMonitorPoint, MonitorAggregator
 
@@ -27,7 +28,7 @@ class DataRecorderMonitor(MonitorAggregator):
 
     stale_timestamp = 120.0
 
-    def aggregate_monitor_points(self) -> list[AggregateMonitorPoint]:
+    def aggregate_monitor_points(self) -> List[AggregateMonitorPoint]:
         points = {}
 
         for val, metadata in self.client.get_range("/mon/dr00", "/mon/dr99"):
