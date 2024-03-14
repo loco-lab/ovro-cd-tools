@@ -2,6 +2,8 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import List
 
+from dateutil.parser import parse
+
 from ..interface import AggregateMonitorPoint, MonitorAggregator
 
 
@@ -30,9 +32,9 @@ class SnapMonitor(MonitorAggregator):
             val = json.loads(val)
 
             if key.casefold().endswith("status"):
-                recent = recent = datetime.fromisoformat(
-                    val["timestamp"]
-                ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
+                recent = recent = parse(val["timestamp"]) - datetime.now(
+                    timezone.utc
+                ) < timedelta(seconds=self.stale_timestamp)
                 point = AggregateMonitorPoint(
                     f"/mon/snap/summary/{snapnum}",
                     ("snap", snapnum),
@@ -41,9 +43,9 @@ class SnapMonitor(MonitorAggregator):
 
             # look for keys ending in the snap number too
             elif key.casefold().endswith(snapnum):
-                recent = recent = datetime.fromisoformat(
-                    val["timestamp"]
-                ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
+                recent = recent = parse(val["timestamp"]) - datetime.now(
+                    timezone.utc
+                ) < timedelta(seconds=self.stale_timestamp)
 
                 eth_gbps = None
                 stats = val.get("stats")
