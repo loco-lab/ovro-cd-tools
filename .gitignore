@@ -1,8 +1,6 @@
 */target/
 
-mnc-aggregator/src/mnc_aggregator/__pycache__/
+**/__pycache__/
 
-mnc-aggregator/src/mnc_aggregator/tests/__pycache__/
-mnc-aggregator/src/mnc_aggregator/version.py
+**/version.py
 */.pytest_cache
-mnc-aggregator/src/mnc_aggregator/subsystems/__pycache__/
