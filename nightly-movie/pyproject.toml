@@ -1,0 +1,49 @@
+[build-system]
+ requires      = [ "hatchling", "hatch-vcs" ]
+ build-backend = "hatchling.build"
+
+
+[project]
+ dependencies = [
+  "astropy",
+  "casperfpga",
+  "python-dateutil",
+  "dsa110-pyutils",
+  "etcd3",
+  "glances",
+  "influxdb",
+  "ipython",
+  "lwa_f",
+  "matplotlib",
+  "mnc-python",
+  "numpy",
+  "protobuf<=3.20",
+  "progressbar2",
+  "pyyaml",
+  "requests",
+  "scipy",
+  "setuptools_scm",
+  "structlog>=21.0.0",
+  "termcolor",
+  "tftpy==0.8.0",
+ ]
+ name = "nightly_movie"
+ description = """Creates a movie of images from OVRO-LWA raw ms files.
+ """
+ license = "BSD-3-Clause"
+ readme = "README.md"
+ requires-python = ">=3.6"
+ dynamic = [ "version" ]
+
+
+ #  [project.scripts]
+ #   aggregate_monitor_points = "nightly_movie.cli:main"
+
+
+[tool.hatch]
+ version.source               = "vcs"
+ version.raw-options          = { root = ".." }
+ build.hooks.vcs.version-file = "src/nightly_movie/version.py"
+
+ [tool.hatch.build.targets.wheel]
+  packages = [ "src/nightly_movie" ]
