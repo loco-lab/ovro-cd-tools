@@ -41,6 +41,13 @@ class DataRecorderMonitor(MonitorAggregator):
 
             # take the last bit off the key to get the influx entry name
             field_name = self.field_mapping[key.split("/")[-1]]
+            value = val["value"]
+
+            # remap the "summary" into is_normal as a boolean.
+            if field_name.casefold() == "recorder_status":
+                field_name = "is_normal"
+                value = value.casefold() == "normal"
+
             recent = datetime.fromtimestamp(
                 val["timestamp"], timezone.utc
             ) - datetime.now(timezone.utc) < timedelta(seconds=self.stale_timestamp)
@@ -48,7 +55,7 @@ class DataRecorderMonitor(MonitorAggregator):
             point = AggregateMonitorPoint(
                 f"/mon/dr/summary/{tagname}",
                 ("dr", tagname),
-                {field_name: val["value"], f"{field_name}_recent": recent},
+                {field_name: value, f"{field_name}_recent": recent},
             )
             # input the points into the mapping dict
             # making use of the addition we defined for this
