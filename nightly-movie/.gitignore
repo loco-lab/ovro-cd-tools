@@ -1,0 +1,6 @@
+*/target/
+
+**/__pycache__/
+
+**/version.py
+*/.pytest_cache

@@ -4,29 +4,7 @@
 
 
 [project]
- dependencies = [
-  "astropy",
-  "casperfpga",
-  "python-dateutil",
-  "dsa110-pyutils",
-  "etcd3",
-  "glances",
-  "influxdb",
-  "ipython",
-  "lwa_f",
-  "matplotlib",
-  "mnc-python",
-  "numpy",
-  "protobuf<=3.20",
-  "progressbar2",
-  "pyyaml",
-  "requests",
-  "scipy",
-  "setuptools_scm",
-  "structlog>=21.0.0",
-  "termcolor",
-  "tftpy==0.8.0",
- ]
+ dependencies = [ "astropy", "casadata", "casatasks", "ffmpeg-python", "numpy" ]
  name = "nightly_movie"
  description = """Creates a movie of images from OVRO-LWA raw ms files.
  """
@@ -36,8 +14,8 @@
  dynamic = [ "version" ]
 
 
- #  [project.scripts]
- #   aggregate_monitor_points = "nightly_movie.cli:main"
+ [project.scripts]
+  ovro_nightly_movie = "nightly_movie.cli:main"
 
 
 [tool.hatch]
