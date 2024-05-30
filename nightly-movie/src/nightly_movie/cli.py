@@ -4,9 +4,9 @@ matplotlib.use("Agg")  # noqa:
 
 import argparse
 import re
-import sys
 import shutil
 import subprocess
+import sys
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
@@ -81,8 +81,8 @@ def main():
         set(map(lambda x: utils.TIME_REGEX.match(str(x)).group("band"), filelist))
     )
 
-    bcal_files = utils.check_for_bcal(args.date, subbands)
-    calibration_function = partial(apply_cal, bcal_files)
+    bcal_exists = utils.check_for_bcal(args.date, subbands)
+    calibration_function = partial(apply_cal, bcal_exists)
 
     print("Grouping data files")
     # switch to a central time in a 5min window. Don't use the entire window.
@@ -94,6 +94,10 @@ def main():
 
     # make the date's directory in the staging area.
     output_prefix.mkdir(parents=True, exist_ok=True)
+
+    if not bcal_exists:
+        print("No bcal files found. generating naive calibration")
+        utils.naive_calibration(grouped_data, output_prefix)
 
     for central_time, file_group in grouped_data.items():
         print(f"Working on {central_time.iso}")
@@ -172,24 +176,17 @@ def main():
                 Path("/lustre/mkolopanis/movies")
                 / f"ovro_nightly_{name}_{date_str}.mp4"
             ),
-        ).overwrite_output().run(
-            cmd=str(Path(sys.executable).parent / "ffmpeg")
-        )
+        ).overwrite_output().run(cmd=str(Path(sys.executable).parent / "ffmpeg"))
 
 
-def apply_cal(bcal_files: bool, filename: Path):
+def apply_cal(bcal_exists: bool, filename: Path):
     filename = str(filename)
 
     clearcal(filename, addmodel=True)
 
-    if bcal_files:
+    if bcal_exists:
         bcal = utils.get_bcal(filename, Path("/lustre/celery/bcal/"))
     else:
-        bcal = Path(utils.get_bcal(filename, Path(filename).parent))
-        if not bcal.exists():
-            bcal.parent.mkdir(parents=True, exist_ok=True)
-            ft(filename, complist=COMPONENT_LIST, usescratch=True)
-            bandpass(filename, str(bcal), uvrange=">10lambda", fillgaps=1)
-        bcal = str(bcal)
+        bcal = utils.get_bcal(filename, Path(filename).parent)
 
     applycal(filename, gaintable=[bcal], flagbackup=False)

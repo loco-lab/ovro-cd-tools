@@ -3,4 +3,7 @@
 # All rights reserved.
 
 
-from . import utils  # noqa: F401
+from . import (
+    beam,  # noqa: F401
+    utils,  # noqa: F401
+)
