@@ -1,0 +1,53 @@
+[build-system]
+ requires      = [ "hatchling", "hatch-vcs" ]
+ build-backend = "hatchling.build"
+
+[project]
+ name = "db-inspector"
+ dynamic = [ "version" ]
+ description = 'A python interface to OVRO-LWA InfluxDB'
+ readme = "README.md"
+ requires-python = ">=3.8"
+ license = "BSD-3-Clause"
+ keywords = [  ]
+ authors = [ { name = "Matthew Kolopanis", email = "matthew.kolopanis@gmail.com" } ]
+ classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+ ]
+ dependencies = [ "influxdb", "pandas>=1.0.0", "numpy>=1.24" ]
+
+ [project.optional-dependencies]
+  dev = [ "pytest" ]
+
+[tool.hatch]
+ build.hooks.vcs.version-file = "src/db_inspector/version.py"
+
+ [tool.hatch.version]
+  source      = "vcs"
+  raw-options = { root = ".." }
+
+ [tool.hatch.envs.types]
+  extra-dependencies = [ "mypy>=1.0.0" ]
+  [tool.hatch.envs.types.scripts]
+   check = "mypy --install-types --non-interactive {args:src/db_inspector tests}"
+
+[tool.coverage.run]
+ source_pkgs = [ "db_inspector", "tests" ]
+ branch      = true
+ parallel    = true
+ omit        = [ "src/db_inspector/__about__.py" ]
+
+[tool.coverage.paths]
+ db_inspector = [ "src/db_inspector", "*/db-inspector/src/db_inspector" ]
+ tests        = [ "tests", "*/db-inspector/tests" ]
+
+[tool.coverage.report]
+ exclude_lines = [ "no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:" ]
