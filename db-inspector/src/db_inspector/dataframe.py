@@ -67,7 +67,7 @@ def aggregate_dataframe(frame: DataFrame, system: Subsystem):
     all_times = mean.index.get_level_values(0)
     unique_times = all_times.unique()
 
-    output_str = f"{system:^14}\t" + "".join(f"{tag:^12}" for tag in all_tags) + "\n"
+    output_str = f"{system:^14}\t" + "".join(f"{tag:^14}" for tag in all_tags) + "\n"
 
     for time in unique_times:
         output_str += f"{time.strftime('%Y-%m-%d'):^14}\t"
@@ -77,10 +77,10 @@ def aggregate_dataframe(frame: DataFrame, system: Subsystem):
         for tag in all_tags:
             if tag in selected_tags:
                 # print the data
-                output_str += f"{df_time.loc[(time, tag)].values.item(0):^ 12.1f}"
+                output_str += f"{df_time.loc[(time, tag)].values.item(0):^ 14.1f}"
             else:
                 # skip
-                output_str += f"{ '':>12} "
+                output_str += f"{ '':>14} "
 
         output_str += "\n"
 
