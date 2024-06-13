@@ -28,14 +28,23 @@ def main():
         "subsystem",
         type=Subsystem,
         choices=list(Subsystem),
-        help="OVRO-LWA subsystem for which statistics will be queried.",
+        help=(
+            "OVRO-LWA subsystem for which statistics will be queried.\n"
+            "This tool will print the following statistics depending on which subsystem is chosen:\n"
+            " - data-recorders: recorder_rate\n"
+            " - x-engines: capture_rate\n"
+            " - snaps: eth_gbps"
+        ),
     )
 
     parser.add_argument(
         "--start-date",
         "-s",
         type=lambda x: Time(x, format="iso", scale="utc"),
-        help=("The starting date for the influx query."),
+        help=(
+            "The starting date for the influx query.\n"
+            "Expected to be in the form YYYY-MM-DD"
+        ),
         dest="start_date",
     )
 
@@ -46,7 +55,10 @@ def main():
         "-d",
         type=lambda x: TimeDelta(x, format="jd"),
         default=TimeDelta(1, format="jd"),
-        help="The number of days for which to query the given subsystem.\nThis is mutually exclusive with end_date.",
+        help=(
+            "The number of days for which to query the given subsystem.\n"
+            "This is mutually exclusive with end_date."
+        ),
     )
 
     time_delta_group.add_argument(
@@ -54,7 +66,11 @@ def main():
         "-e",
         type=lambda x: Time(x, format="iso", scale="utc"),
         dest="end_date",
-        help="The ending date to query the DB. mutually exclusive with delta",
+        help=(
+            "The ending date to query the DB.\n"
+            "Expected to be in the form YYYY-MM-DD.\n"
+            "Mutually exclusive with delta"
+        ),
     )
     args = parser.parse_args()
 
