@@ -12,9 +12,12 @@ from pandas import DataFrame
 
 
 class Subsystem(Enum):
-    DataRecorders = 1
-    XEngines = 2
-    Snaps = 3
+    DataRecorders = "data-recorders"
+    XEngines = "x-engines"
+    Snaps = "snaps"
+
+    def __str__(self):
+        return self.value
 
 
 def atoi(text):

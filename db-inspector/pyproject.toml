@@ -22,10 +22,14 @@
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
  ]
- dependencies = [ "influxdb", "pandas>=1.0.0", "numpy>=1.24" ]
+ dependencies = [ "astropy", "influxdb", "mnc-python", "pandas>=1.0.0", "numpy>=1.24" ]
 
  [project.optional-dependencies]
   dev = [ "pytest" ]
+
+ [project.scripts]
+  influx-inspect = "db_inspector.cli:main"
+
 
 [tool.hatch]
  build.hooks.vcs.version-file = "src/db_inspector/version.py"
@@ -34,20 +38,15 @@
   source      = "vcs"
   raw-options = { root = ".." }
 
- [tool.hatch.envs.types]
-  extra-dependencies = [ "mypy>=1.0.0" ]
-  [tool.hatch.envs.types.scripts]
-   check = "mypy --install-types --non-interactive {args:src/db_inspector tests}"
+ [tool.coverage.run]
+  source_pkgs = [ "db_inspector", "tests" ]
+  branch      = true
+  parallel    = true
+  omit        = [ "src/db_inspector/__about__.py" ]
 
-[tool.coverage.run]
- source_pkgs = [ "db_inspector", "tests" ]
- branch      = true
- parallel    = true
- omit        = [ "src/db_inspector/__about__.py" ]
+ [tool.coverage.paths]
+  db_inspector = [ "src/db_inspector", "*/db-inspector/src/db_inspector" ]
+  tests        = [ "tests", "*/db-inspector/tests" ]
 
-[tool.coverage.paths]
- db_inspector = [ "src/db_inspector", "*/db-inspector/src/db_inspector" ]
- tests        = [ "tests", "*/db-inspector/tests" ]
-
-[tool.coverage.report]
- exclude_lines = [ "no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:" ]
+ [tool.coverage.report]
+  exclude_lines = [ "no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:" ]

@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 from db_inspector.dataframe import (
     aggregate_dataframe,
-    atoi,
     get_sortable_type,
     natural_keys,
 )
