@@ -40,7 +40,7 @@ def get_sortable_type(val):
         return type(val)
 
 
-def aggregate_dataframe(frame: DataFrame):
+def aggregate_dataframe(frame: DataFrame, system: Subsystem):
     """Sort input dataframe by date and tag and print to terminal."""
 
     # floor of index groups up the time by the day.
@@ -67,10 +67,10 @@ def aggregate_dataframe(frame: DataFrame):
     all_times = mean.index.get_level_values(0)
     unique_times = all_times.unique()
 
-    output_str = f"{ '':>10}\t" + "".join(f"{tag:^12}" for tag in all_tags) + "\n"
+    output_str = f"{system:^14}\t" + "".join(f"{tag:^12}" for tag in all_tags) + "\n"
 
     for time in unique_times:
-        output_str += f"{time.strftime('%Y-%m-%d'):}\t"
+        output_str += f"{time.strftime('%Y-%m-%d'):^14}\t"
         df_time = mean[all_times == time]
         selected_tags = df_time.index.get_level_values(1)
 
@@ -115,4 +115,4 @@ def print_stats_for_subsystem(
     system: Subsystem, influx_client: DataFrameClient, start_time: Time, end_time: Time
 ):
     dataframe = query_subsystem(system, influx_client, start_time, end_time)
-    aggregate_dataframe(dataframe)
+    aggregate_dataframe(dataframe, system)
