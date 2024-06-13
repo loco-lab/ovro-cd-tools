@@ -97,7 +97,7 @@ def query_subsystem(
         )
         return influx_client.query(query)["drmon"]
 
-    elif system == Subsystem.XEngine:
+    elif system == Subsystem.XEngines:
         query = (
             f'SELECT "capture_rate",pipelinehost as "tag" FROM "xengmon" WHERE '
             f'"time" >= {int(start_time.unix*1000)}ms and time < {int(end_time.unix*1000)}ms and "capture_recent"=True'
