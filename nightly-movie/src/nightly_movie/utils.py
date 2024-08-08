@@ -78,7 +78,7 @@ def naive_calibration(file_dict: dict, output_prefix: Path):
 
     # find time where Cas A alt is highest
 
-    obstimes = Time(file_dict.keys())
+    obstimes = Time(list(file_dict.keys()))
     ovro_altaz = AltAz(obstime=obstimes, location=OVRO_LOCATION)
 
     CasA = ATEAM_SOURCES["Cas A"]
@@ -103,7 +103,7 @@ def naive_calibration(file_dict: dict, output_prefix: Path):
 
     ms_file = ms()
     ms_file.open(str(filename))
-    time_info = ms_file.getscansummary().values()[0].values()[0]
+    time_info = list(list(ms_file.getscansummary().values())[0].values())[0]
     obstime = Time(
         time_info["BeginTime"],
         format="mjd",
