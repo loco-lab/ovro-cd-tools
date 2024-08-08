@@ -331,7 +331,7 @@ def generate_componentlist(componentlist_name: Path, beam: Beam):
             label=src["label"],
         )
 
-    cl.rename(componentlist_name)
+    cl.rename(str(componentlist_name))
     cl.done()
 
 
