@@ -54,7 +54,7 @@ ATEAM_SOURCES = {
 def perform_cal(filename: Path, cal_file: Path, output_prefix: Path):
     clearcal(str(filename), addmodel=True)
 
-    bcal = Path(get_bcal(filename, output_prefix))
+    bcal = Path(get_bcal(str(filename), output_prefix))
 
     bcal.parent.mkdir(parents=True, exist_ok=True)
 
