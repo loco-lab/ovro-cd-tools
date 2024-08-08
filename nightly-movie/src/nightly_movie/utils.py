@@ -289,28 +289,28 @@ def copy_files(filenames: List[Path], outdir: Path) -> List[Path]:
 def generate_componentlist(componentlist_name: Path, beam: Beam):
     src_list = [
         {
-            "label": "CasA",
+            "label": "Cas A",
             "flux": 16530,
             "alpha": -0.72,
             "ref_freq": "80.0MHz",  # MHz
             "position": "J2000 23h23m24s +58d48m54s",
         },
         {
-            "label": "CygA",
+            "label": "Cyg A",
             "flux": 16300,
             "alpha": -0.58,
             "ref_freq": "80.00MHz",  # MHz
             "position": "J2000 19h59m28.35663s +40d44m02.0970s",
         },
         {
-            "label": "TauA",
+            "label": "Tau A",
             "flux": 1770,
             "alpha": -0.27,
             "ref_freq": "80.00MHz",  # MHz
             "position": "J2000 05h34m31.94s +22d00m52.2s",
         },
         {
-            "label": "VirA",
+            "label": "Vir A",
             "flux": 2400,
             "alpha": -0.86,
             "ref_freq": "80.00MHz",  # MHz
