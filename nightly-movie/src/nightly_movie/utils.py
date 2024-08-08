@@ -107,7 +107,7 @@ def naive_calibration(file_dict: dict, output_prefix: Path):
     obstime = Time(
         time_info["BeginTime"],
         format="mjd",
-        scale="utc'",
+        scale="utc",
     ) + TimeDelta(time_info["IntegrationTime"] / 2, format="sec")
     # get the reference frequency in MHz
     freq = ms_file.getspectralwindowinfo()["0"]["RefFreq"] / 1e6
