@@ -66,6 +66,14 @@ def main():
         help=("The interval in minutes the data will be grouped into."),
     )
 
+    parser.add_argument(
+        "--datapath",
+        "-d",
+        required=False,
+        type=Path,
+        default=Path("/lustre/pipeline/night-time/"),
+    )
+
     args = parser.parse_args()
 
     # group all files
@@ -73,9 +81,7 @@ def main():
     if DATE_REGEX.match(args.date) is None:
         raise ValueError("Input date must be a date in the format YYYY-MM-DD")
 
-    filelist = list(
-        Path("/lustre/pipeline/night-time/").glob(f"*[!13MHz]*/{args.date}/*/*MHz.ms")
-    )
+    filelist = list(args.datapath.glob(f"*[!13MHz]*/{args.date}/*/*MHz.ms"))
 
     subbands = list(
         set(map(lambda x: utils.TIME_REGEX.match(str(x)).group("band"), filelist))
