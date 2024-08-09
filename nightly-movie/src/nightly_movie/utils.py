@@ -5,7 +5,6 @@
 # these are necessary to get the images to not need
 # a gui backend
 from functools import partial
-from multiprocessing import Pool
 
 import matplotlib  # noqa:
 
@@ -56,10 +55,12 @@ def perform_cal(filename: Path, cal_file: Path, output_prefix: Path):
 
     bcal = Path(get_bcal(str(filename), output_prefix))
 
-    bcal.parent.mkdir(parents=True, exist_ok=True)
-
-    ft(str(filename), complist=str(cal_file), usescratch=True)
-    bandpass(str(filename), str(bcal), uvrange=">10lambda", fillgaps=1, refant="199")
+    if not bcal.exists():
+        bcal.parent.mkdir(parents=True, exist_ok=True)
+        ft(str(filename), complist=str(cal_file), usescratch=True)
+        bandpass(
+            str(filename), str(bcal), uvrange=">10lambda", fillgaps=1, refant="199"
+        )
 
 
 def naive_calibration(file_dict: dict, output_prefix: Path):
@@ -76,57 +77,52 @@ def naive_calibration(file_dict: dict, output_prefix: Path):
         The location where data should be saved
     """
 
-    # find time where Cas A alt is highest
-
+    # modify flux by the beam?
+    # compute calibration paramters
     obstimes = Time(list(file_dict.keys()))
     ovro_altaz = AltAz(obstime=obstimes, location=OVRO_LOCATION)
 
     CasA = ATEAM_SOURCES["Cas A"]
     CasA_altaz = CasA.transform_to(ovro_altaz)
 
-    #  get central_integration
+    # find time where Cas A alt is highest
     cal_ind = np.argmax(CasA_altaz.alt)
     calibration_key = list(file_dict.keys())[cal_ind]
-
-    # modify flux by the beam?
-    # compute calibration paramters
-    cal_file = output_prefix / "ateam.cl"
-
     # copy file
     cal_group = file_dict[calibration_key]
+    #  get central_integration
     file_group = get_central_integration(cal_group, calibration_key)
     print("\tCopying Files for calibration")
     working_file_group = copy_files(file_group, output_prefix)
 
-    # sort to get the highest frequency at the end
-    filename = sorted(working_file_group)[-1]
+    cal_file = output_prefix / "ateam.cl"
+    if not cal_file.exists():
+        # sort to get the highest frequency at the end
+        filename = sorted(working_file_group)[-1]
 
-    ms_file = ms()
-    ms_file.open(str(filename))
-    time_info = list(list(ms_file.getscansummary().values())[0].values())[0]
-    obstime = Time(
-        time_info["BeginTime"],
-        format="mjd",
-        scale="utc",
-    ) + TimeDelta(time_info["IntegrationTime"] / 2, format="sec")
-    # get the reference frequency in MHz
-    freq = ms_file.getspectralwindowinfo()["0"]["RefFreq"] / 1e6
-    ms_file.close()
+        ms_file = ms()
+        ms_file.open(str(filename))
+        time_info = list(list(ms_file.getscansummary().values())[0].values())[0]
+        obstime = Time(
+            time_info["BeginTime"],
+            format="mjd",
+            scale="utc",
+        ) + TimeDelta(time_info["IntegrationTime"] / 2, format="sec")
+        # get the reference frequency in MHz
+        freq = ms_file.getspectralwindowinfo()["0"]["RefFreq"] / 1e6
+        ms_file.close()
 
-    print("Loading beam")
-    beam = Beam(freq, obstime)
-    print("Generating component list")
-    generate_componentlist(cal_file, beam)
+        print("Loading beam")
+        beam = Beam(freq, obstime)
+        print("Generating component list")
+        generate_componentlist(cal_file, beam)
 
     print("Performing Calibration")
     calibration_function = partial(
         perform_cal, cal_file=cal_file, output_prefix=output_prefix
     )
-    with Pool(16) as p:
-        p.map(
-            calibration_function,
-            working_file_group,
-        )
+    for filename in working_file_group:
+        calibration_function(filename)
 
 
 def partition_files(filenames: List[Path]) -> Tuple[List[Path], List[Path]]:
