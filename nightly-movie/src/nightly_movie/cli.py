@@ -125,16 +125,8 @@ def main():
         highband_jpg = str(date_dir / (highband_name_stem + ".jpg"))
         lowband_jpg = str(date_dir / (lowband_name_stem + ".jpg"))
 
-        with Pool(16) as p:
-            p.map(
-                calibration_function,
-                lowband + highband,
-            )
-        #   TTcal
-        #       conda activate julia060
-        #       ttcal.jl peel ${ms} /home/pipeline/sources.json --beam constant --minuvw 10 --maxiter 30 --tolerance 1e-4
-
-        #   Image
+        for filename in lowband + highband:
+            calibration_function(filename)
 
         subprocess.run(
             WSCLEAN_CMD + f"{highband_image} {' '.join(map(str, highband))}",
