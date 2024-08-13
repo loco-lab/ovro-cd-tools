@@ -4,6 +4,7 @@
 
 # these are necessary to get the images to not need
 # a gui backend
+import shutil
 from functools import partial
 
 import matplotlib  # noqa:
@@ -51,11 +52,11 @@ ATEAM_SOURCES = {
 
 
 def perform_cal(filename: Path, cal_file: Path, output_prefix: Path):
-    clearcal(str(filename), addmodel=True)
-
     bcal = Path(get_bcal(str(filename), output_prefix))
 
     if not bcal.exists():
+        clearcal(str(filename), addmodel=True)
+
         bcal.parent.mkdir(parents=True, exist_ok=True)
         ft(str(filename), complist=str(cal_file), usescratch=True)
         bandpass(
@@ -123,6 +124,10 @@ def naive_calibration(file_dict: dict, output_prefix: Path):
     )
     for filename in working_file_group:
         calibration_function(filename)
+
+    print("Removing calibration files")
+    for path in working_file_group:
+        shutil.rmtree(path)
 
 
 def partition_files(filenames: List[Path]) -> Tuple[List[Path], List[Path]]:
