@@ -48,17 +48,34 @@ class SnapMonitor(MonitorAggregator):
                 ) < timedelta(seconds=self.stale_timestamp)
 
                 eth_gbps = None
+                overflow_count = None
+                clip_count = None
+
                 stats = val.get("stats")
                 if isinstance(stats, dict):
                     eth = stats.get("eth")
                     if isinstance(eth, dict):
                         eth_gbps = eth.get("gbps")
 
+                    pfb = stats.get("pfb")
+                    if isinstance(pfb, dict):
+                        overflow_count = pfb.get("overflow_count")
+
+                    eq = stats.get("eq")
+                    if isinstance(eq, dict):
+                        clip_count = eq.get("clip_count")
+
                 point = AggregateMonitorPoint(
                     f"/mon/snap/summary/{snapnum}",
                     ("snap", snapnum),
-                    {"eth_gbps": eth_gbps, "eth_recent": recent},
+                    {
+                        "eth_gbps": eth_gbps,
+                        "eth_recent": recent,
+                        "clip_count": clip_count,
+                        "overflow_count": overflow_count,
+                    },
                 )
+
             else:
                 # ignore any other keys for now
                 continue
