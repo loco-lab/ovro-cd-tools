@@ -11,18 +11,20 @@ import matplotlib  # noqa:
 
 matplotlib.use("Agg")  # noqa:
 
+import json
 import re
 import subprocess
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
+import etcd3
 import numpy as np
 from astropy import units
 from astropy.coordinates import AltAz, SkyCoord, get_body
 from astropy.io import fits
 from astropy.time import Time, TimeDelta
 from astropy.wcs import WCS
-from casatasks import bandpass, clearcal, ft
+from casatasks import bandpass, clearcal, flagdata, ft
 from casatools import componentlist, ms
 from matplotlib import pyplot as plt
 from matplotlib.colors import Normalize
@@ -31,7 +33,7 @@ from .beam import OVRO_LOCATION, Beam
 
 TIME_REGEX = re.compile(r".*(?P<date>\d{8})_(?P<hms>\d{6})_(?P<band>\d{2}MHz).ms")
 NAME_REGEX = re.compile(r".*\d{8}_\d{6}_(?P<name>[a-zA-Z]*)-.*\.fits$")
-
+ANTNAME_REGEX = re.compile(r"^(?i)(LWA-)?(?P<num>\d{2,3})[AB].*$")
 
 ATEAM_SOURCES = {
     name: SkyCoord.from_name(name)
@@ -51,10 +53,45 @@ ATEAM_SOURCES = {
 }
 
 
-def perform_cal(filename: Path, cal_file: Path, output_prefix: Path):
+def get_bad_ants(latest: Union[str, None] = None) -> str:
+    client = etcd3.client(
+        "etcdv3service",
+        2379,
+        grpc_options=[
+            ("grpc.max_receive_message_length", -1),
+            ("grpc.max_send_message_length", -1),
+        ],
+    )
+    if latest is None:
+        times = [
+            kv.key.decode().lstrip("/mon/anthealth/selfcorr/")
+            for _, kv in client.get_prefix("/mon/anthealth/selfcorr/")
+        ]
+        latest = sorted(times)[-1]
+
+    if latest == "":
+        return []
+
+    bad_ants = json.loads(client.get(f"/mon/anthealth/selfcorr/{latest}")[0])
+    flagged = np.array(bad_ants["antname"])[np.where(bad_ants["flagged"])]
+
+    nums = []
+    for name in flagged:
+        match = ANTNAME_REGEX.match(name)
+        if match is not None:
+            nums.append(int(match.group("num")))
+    nums = sorted(set(nums))
+
+    return ",".join(str(x) for x in nums)
+
+
+def perform_cal(filename: Path, bad_ants: str, cal_file: Path, output_prefix: Path):
     bcal = Path(get_bcal(str(filename), output_prefix))
 
     if not bcal.exists():
+        if bad_ants != "":
+            flagdata(str(filename), mode="manual", antenna=bad_ants, datacolumn="all")
+
         clearcal(str(filename), addmodel=True)
 
         bcal.parent.mkdir(parents=True, exist_ok=True)
@@ -118,9 +155,14 @@ def naive_calibration(file_dict: dict, output_prefix: Path):
         print("Generating component list")
         generate_componentlist(cal_file, beam)
 
+    print("Getting bad antennas")
+    bad_ants = get_bad_ants()
+    if bad_ants != "":
+        print("Flagging antennas: {bad_ants}")
+
     print("Performing Calibration")
     calibration_function = partial(
-        perform_cal, cal_file=cal_file, output_prefix=output_prefix
+        perform_cal, bad_ants=bad_ants, cal_file=cal_file, output_prefix=output_prefix
     )
     for filename in working_file_group:
         calibration_function(filename)

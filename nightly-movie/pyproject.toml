@@ -4,7 +4,7 @@
 
 
 [project]
- dependencies = [ "astropy", "casadata", "casatasks", "ffmpeg-python", "numpy" ]
+ dependencies = [ "astropy", "casadata", "casatasks", "etcd3", "ffmpeg-python", "numpy" ]
  name = "nightly_movie"
  description = """Creates a movie of images from OVRO-LWA raw ms files.
  """
