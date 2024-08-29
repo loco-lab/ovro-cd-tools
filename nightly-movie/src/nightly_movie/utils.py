@@ -70,7 +70,7 @@ def get_bad_ants(latest: Union[str, None] = None) -> str:
         latest = sorted(times)[-1]
 
     if latest == "":
-        return []
+        return ""
 
     bad_ants = json.loads(client.get(f"/mon/anthealth/selfcorr/{latest}")[0])
     flagged = np.array(bad_ants["antname"])[np.where(bad_ants["flagged"])]
