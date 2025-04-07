@@ -14,7 +14,7 @@ from pathlib import Path
 import ffmpeg
 from astropy import units
 from astropy.time import TimeDelta
-from casatasks import applycal, bandpass, clearcal, ft
+from casatasks import applycal, clearcal
 
 from . import utils
 
@@ -163,6 +163,10 @@ def main():
         for path in lowband + highband:
             shutil.rmtree(path)
 
+        for image_type in [highband_image, lowband_image]:
+            for pol in ["I", "V"]:
+                Path(image_type + "-" + pol + "-dirty.fits").unlink()
+
     date_str = "".join(args.date.split("-"))
     for name in ["highband", "lowband"]:
         ffmpeg.input(
@@ -175,6 +179,10 @@ def main():
                 / f"ovro_nightly_{name}_{date_str}.mp4"
             ),
         ).overwrite_output().run(cmd=str(Path(sys.executable).parent / "ffmpeg"))
+
+    print("Removing intermediate JPG files")
+    for jpg_file in Path(f"{date_dir}").glob("*.jpg"):
+        jpg_file.unlink()
 
 
 def apply_cal(bcal_exists: bool, filename: Path):
