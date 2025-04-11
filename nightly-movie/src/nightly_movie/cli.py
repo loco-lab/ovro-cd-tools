@@ -71,7 +71,7 @@ def main():
         "-d",
         required=False,
         type=Path,
-        default=Path("/lustre/pipeline/night-time/"),
+        default=Path("/lustre/pipeline/slow"),
     )
 
     args = parser.parse_args()
