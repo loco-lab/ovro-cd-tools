@@ -16,7 +16,7 @@ date_str=$(basename $1)
 source ~/.bashrc
 set -e
 set -o pipefail
-
+echo "TASK ID" $SLURM_ARRAY_TASK_ID
 
 logfile=/lustre/djacobs/QA/TP/${date_str}.log
 
@@ -32,5 +32,11 @@ fi
 # use slurm env variables to divide over list of input files
 ALLFILES=$(ls -d $1/*/*ms)
 TASKFILES=$(~/src/ovro-cd-tools/qa/array_select.py $SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_COUNT $ALLFILES)
-echo $TASKFILES
+for TASKFILE in $TASKFILES;
+do 
+echo $TASKFILE
+done
+
+
+
 
