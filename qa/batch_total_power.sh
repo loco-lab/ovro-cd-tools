@@ -35,6 +35,7 @@ TASKFILES=$(~/src/ovro-cd-tools/qa/array_select.py $SLURM_ARRAY_TASK_ID $SLURM_A
 for TASKFILE in $TASKFILES;
 do 
 echo $TASKFILE
+time python ~/src/ovro-cd-tools/qa/total_power.py $TASKFILE
 done
 
 
