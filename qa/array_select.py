@@ -4,8 +4,8 @@ import sys
 # N must be > task_count
 
 
-task_id = sys.argv[1]
-task_count = sys.argv[2]
+task_id = int(sys.argv[1])
+task_count = int(sys.argv[2])
 files = sys.argv[3:]
 
 assert len(files)>task_count, f'Error {len(files)} must be greater than $task_count' 
