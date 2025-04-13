@@ -19,6 +19,7 @@ set -o pipefail
 echo "TASK ID" $SLURM_ARRAY_TASK_ID
 
 logfile=/lustre/djacobs/QA/TP/${date_str}.log
+mamba activate LWA2024
 
 if mamba activate LWA2024 |& tee -a $logfile ; then
     : # everything OK
