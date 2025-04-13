@@ -31,7 +31,8 @@ fi
 echo $(which python)
 #RUN SCRIPT
 # use slurm env variables to divide over list of input files
-ALLFILES=$(ls -d $1/*/*ms)
+#ALLFILES=$(ls -d $1/*/*ms) #this pathing works with 2025 pipeline structure Band/day/hour/*.ms
+ALLFILES=$(ls -d $1/*ms) # the earlier file structure is band/day/*ms
 TASKFILES=$(~/src/ovro-cd-tools/qa/array_select.py $SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_COUNT $ALLFILES)
 for TASKFILE in $TASKFILES;
 do 
