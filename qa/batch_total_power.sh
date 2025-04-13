@@ -27,7 +27,7 @@ else
     echo "error: had a problem activating LWA2024 environment." |& tee -a $logfile
     exit $ec
 fi
-
+echo $(which python)
 #RUN SCRIPT
 # use slurm env variables to divide over list of input files
 ALLFILES=$(ls -d $1/*/*ms)
