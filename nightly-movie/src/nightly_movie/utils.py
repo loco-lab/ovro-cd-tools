@@ -9,33 +9,28 @@
 import matplotlib  # noqa:
 
 matplotlib.use("Agg")  # noqa:
-from casaconfig import config  # noqa:
 
-config.nologfile = True  # noqa:
-config.logfile = ""  # noqa:
-config.log2term = True  # noqa:
+import json
+import re
+import shutil
+import subprocess
+from functools import partial
+from pathlib import Path
+from typing import List, Tuple, Union
 
-import json  # noqa: E402
-import re  # noqa: E402
-import shutil  # noqa: E402
-import subprocess  # noqa: E402
-from functools import partial  # noqa: E402
-from pathlib import Path  # noqa: E402
-from typing import List, Tuple, Union  # noqa: E402
+import etcd3
+import numpy as np
+from astropy import units
+from astropy.coordinates import AltAz, SkyCoord, get_body
+from astropy.io import fits
+from astropy.time import Time, TimeDelta
+from astropy.wcs import WCS
+from casatasks import bandpass, clearcal, flagdata, ft
+from casatools import componentlist, ms
+from matplotlib import pyplot as plt
+from matplotlib.colors import Normalize
 
-import etcd3  # noqa: E402
-import numpy as np  # noqa: E402
-from astropy import units  # noqa: E402
-from astropy.coordinates import AltAz, SkyCoord, get_body  # noqa: E402
-from astropy.io import fits  # noqa: E402
-from astropy.time import Time, TimeDelta  # noqa: E402
-from astropy.wcs import WCS  # noqa: E402
-from casatasks import bandpass, clearcal, flagdata, ft  # noqa: E402
-from casatools import componentlist, ms  # noqa: E402
-from matplotlib import pyplot as plt  # noqa: E402
-from matplotlib.colors import Normalize  # noqa: E402
-
-from .beam import OVRO_LOCATION, Beam  # noqa: E402
+from .beam import OVRO_LOCATION, Beam
 
 TIME_REGEX = re.compile(r".*(?P<date>\d{8})_(?P<hms>\d{6})_(?P<band>\d{2}MHz).ms")
 NAME_REGEX = re.compile(r".*\d{8}_\d{6}_(?P<name>[a-zA-Z]*)-.*\.fits$")
@@ -141,7 +136,7 @@ def naive_calibration(file_group: List[Path], output_prefix: Path):
 
     # modify flux by the beam?
     # compute calibration parameters
-    print("\tCopying Files for calibration")
+    print("Copying Files for calibration")
     working_file_group = copy_files(file_group, output_prefix)
     try:
         cal_file = output_prefix / "ateam.cl"
@@ -169,7 +164,7 @@ def naive_calibration(file_group: List[Path], output_prefix: Path):
         print("Getting bad antennas")
         bad_ants = get_bad_ants()
         if bad_ants != "":
-            print("Flagging antennas: {bad_ants}")
+            print(f"Flagging antennas: {bad_ants}")
 
         print("Performing Calibration")
         calibration_function = partial(

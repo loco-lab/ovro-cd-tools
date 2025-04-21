@@ -2,26 +2,19 @@ import matplotlib  # noqa:
 
 matplotlib.use("Agg")  # noqa:
 
-# We need to init some casa config things
-from casaconfig import config  # noqa:
+import argparse
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
 
-config.nologfile = True  # noqa:
-config.logfile = ""  # noqa:
-config.log2term = True  # noqa:
+import ffmpeg
+from astropy import units
+from astropy.time import Time, TimeDelta
+from casatasks import applycal, clearcal
 
-import argparse  # noqa: E402
-import re  # noqa: E402
-import shutil  # noqa: E402
-import subprocess  # noqa: E402
-import sys  # noqa: E402
-from pathlib import Path  # noqa: E402
-
-import ffmpeg  # noqa: E402
-from astropy import units  # noqa: E402
-from astropy.time import Time, TimeDelta  # noqa: E402
-from casatasks import applycal, clearcal  # noqa: E402
-
-from . import utils  # noqa: E402
+from . import utils
 
 
 class DefaultRaw(
@@ -75,6 +68,7 @@ def image_snapshot():
     )
 
     args = parser.parse_args()
+    print(f"{Time.now().iso}: Starting Image Snapshot", flush=True)
 
     central_time = args.central_time
     file_group = args.file_group
@@ -139,6 +133,8 @@ def image_snapshot():
             for pol in ["I", "V"]:
                 Path(image_type + "-" + pol + "-dirty.fits").unlink()
 
+    print(f"{Time.now().iso}: Image Snapshot Complete", flush=True)
+
 
 def create_mp4():
     parser = argparse.ArgumentParser(
@@ -155,6 +151,8 @@ def create_mp4():
         type=Path,
     )
     args = parser.parse_args()
+    print(f"{Time.now().iso}: Starting Movie Stitching", flush=True)
+
     date_dir = args.date_dir
 
     date_str = date_dir.name.replace("-", "")
@@ -173,6 +171,8 @@ def create_mp4():
     print("Removing intermediate JPG files")
     for jpg_file in Path(f"{date_dir}").glob("*.jpg"):
         jpg_file.unlink()
+
+    print(f"{Time.now().iso}: Movie Stitching Complete", flush=True)
 
 
 def apply_cal(filename: Path, bcal_exists: bool):
@@ -210,7 +210,9 @@ def naive_calibration():
     )
 
     args = parser.parse_args()
+    print(f"{Time.now().iso}: Starting Calibration", flush=True)
     utils.naive_calibration(args.calibration_file_group, args.output_prefix)
+    print(f"{Time.now().iso}: Calibration Finished", flush=True)
 
 
 def main():
