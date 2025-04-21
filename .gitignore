@@ -4,3 +4,5 @@
 
 **/version.py
 */.pytest_cache
+
+.vscode/
