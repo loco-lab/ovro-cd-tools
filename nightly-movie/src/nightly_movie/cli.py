@@ -50,8 +50,8 @@ def image_snapshot():
         type=Path,
     )
     parser.add_argument(
-        "bcal_exists",
-        type=bool,
+        "bcal",
+        type=Path,
     )
 
     parser.add_argument(
@@ -73,7 +73,7 @@ def image_snapshot():
     central_time = args.central_time
     file_group = args.file_group
     output_prefix = args.output_prefix
-    bcal_exists = args.bcal_exists
+    bcal = args.bcal
 
     print(f"Working on {args.central_time.iso}")
     file_group = utils.get_central_integration(args.file_group, central_time)
@@ -100,7 +100,7 @@ def image_snapshot():
         lowband_jpg = str(date_dir / (lowband_name_stem + ".jpg"))
 
         for filename in lowband + highband:
-            apply_cal(filename, bcal_exists)
+            apply_cal(filename, bcal)
 
         subprocess.run(
             WSCLEAN_CMD + f"{highband_image} {' '.join(map(str, highband))}",
@@ -175,15 +175,12 @@ def create_mp4():
     print(f"{Time.now().iso}: Movie Stitching Complete", flush=True)
 
 
-def apply_cal(filename: Path, bcal_exists: bool):
+def apply_cal(filename: Path, bcal_path: Path):
     filename = str(filename)
 
     clearcal(filename, addmodel=True)
 
-    if bcal_exists:
-        bcal = utils.get_bcal(filename, Path("/lustre/celery/bcal/"))
-    else:
-        bcal = utils.get_bcal(filename, Path(filename).parent)
+    bcal = utils.get_bcal(filename, bcal_path)
 
     applycal(filename, gaintable=[bcal], flagbackup=False)
 
@@ -264,21 +261,29 @@ def main():
     if not filelist:
         raise ValueError(f"Unable to find any data files for: {args.date}")
 
-    sub_bands = list(
-        set(map(lambda x: utils.TIME_REGEX.match(str(x)).group("band"), filelist))
-    )
-    bcal_exists = utils.check_for_bcal(args.date, sub_bands)
-
-    print("Grouping data files")
-    # switch to a central time in a 5min window. Don't use the entire window.
-    grouped_data = utils.group_files(filelist, TimeDelta(args.interval * units.min))
-
     date_dir = Path("/lustre/mkolopanis/movies") / args.date
     date_str = args.date.replace("-", "")
 
     output_prefix = date_dir / "data"
 
     slurm_logs = date_dir / "logs"
+
+    sub_bands = list(
+        set(map(lambda x: utils.TIME_REGEX.match(str(x)).group("band"), filelist))
+    )
+    bcal_stub = Path("/lustre/celery/bcal/")
+    bcal_exists = utils.check_for_bcal(args.date, sub_bands, bcal_stub)
+    # if ew don't have the global calibration files, see if we need to make our own
+    if not bcal_exists:
+        print(
+            "No Bandpass calibration found or some are missing. Performing naive calibration."
+        )
+        bcal_stub = output_prefix
+        bcal_exists = utils.check_for_bcal(args.date, sub_bands, bcal_stub)
+
+    print("Grouping data files")
+    # switch to a central time in a 5min window. Don't use the entire window.
+    grouped_data = utils.group_files(filelist, TimeDelta(args.interval * units.min))
 
     # make the date's directory in the staging area.
     output_prefix.mkdir(parents=True, exist_ok=True)
@@ -319,7 +324,7 @@ def main():
 
         status, snapshot_id = subprocess.getstatusoutput(
             f"sbatch {dependency} --job-name={job_name} --output={str(snapshot_log)} --mem=20G --cpus-per-task=1 "
-            f"{snapshot_executable} {str(output_prefix)} {bcal_exists} {central_time.isot} {' '.join(map(str, file_group))}"
+            f"{snapshot_executable} {str(output_prefix)} {str(bcal_stub)} {central_time.isot} {' '.join(map(str, file_group))}"
         )
         if status != 0:
             raise ValueError(f"Error spawning image snapshot job: {snapshot_id}")

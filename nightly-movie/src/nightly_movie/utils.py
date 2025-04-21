@@ -516,15 +516,11 @@ def plot_snapshot(filename: List[Path], outname: str):
     plt.close()
 
 
-def check_for_bcal(date_str: str, sub_bands: List[str]):
-    bcal_stub = Path("/lustre/celery/bcal/")
+def check_for_bcal(date_str: str, sub_bands: List[str], bcal_stub: Path):
     date_name = "".join(date_str.split("-")) + ".bcal"
     for band in sub_bands:
         bcal_name = bcal_stub / band / date_name
         if not bcal_name.exists():
-            print(
-                f"No Bandpass calibration found for {band}. Performing naive calibration."
-            )
             return False
 
     return True
