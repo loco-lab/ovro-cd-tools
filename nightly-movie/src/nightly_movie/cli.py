@@ -47,18 +47,15 @@ def image_snapshot():
 
     parser.add_argument(
         "output_prefix",
-        nargs=1,
         type=Path,
     )
     parser.add_argument(
         "bcal_exists",
-        nargs=1,
         type=bool,
     )
 
     parser.add_argument(
         "central_time",
-        nargs=1,
         type=lambda d: Time(d, format="isot"),
         help="ISOT formatted central integration time in this group",
     )
@@ -146,7 +143,6 @@ def create_mp4():
 
     parser.add_argument(
         "date_dir",
-        nargs=1,
         type=Path,
     )
     args = parser.parse_args()
@@ -195,7 +191,6 @@ def naive_calibration():
 
     parser.add_argument(
         "output_prefix",
-        nargs=1,
         type=Path,
     )
     parser.add_argument(
