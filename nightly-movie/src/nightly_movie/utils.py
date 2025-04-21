@@ -143,44 +143,47 @@ def naive_calibration(file_group: List[Path], output_prefix: Path):
     # compute calibration parameters
     print("\tCopying Files for calibration")
     working_file_group = copy_files(file_group, output_prefix)
+    try:
+        cal_file = output_prefix / "ateam.cl"
+        if not cal_file.exists():
+            # sort to get the highest frequency at the end
+            filename = sorted(working_file_group)[-1]
 
-    cal_file = output_prefix / "ateam.cl"
-    if not cal_file.exists():
-        # sort to get the highest frequency at the end
-        filename = sorted(working_file_group)[-1]
+            ms_file = ms()
+            ms_file.open(str(filename))
+            time_info = list(list(ms_file.getscansummary().values())[0].values())[0]
+            obstime = Time(
+                time_info["BeginTime"],
+                format="mjd",
+                scale="utc",
+            ) + TimeDelta(time_info["IntegrationTime"] / 2, format="sec")
+            # get the reference frequency in MHz
+            freq = ms_file.getspectralwindowinfo()["0"]["RefFreq"] / 1e6
+            ms_file.close()
 
-        ms_file = ms()
-        ms_file.open(str(filename))
-        time_info = list(list(ms_file.getscansummary().values())[0].values())[0]
-        obstime = Time(
-            time_info["BeginTime"],
-            format="mjd",
-            scale="utc",
-        ) + TimeDelta(time_info["IntegrationTime"] / 2, format="sec")
-        # get the reference frequency in MHz
-        freq = ms_file.getspectralwindowinfo()["0"]["RefFreq"] / 1e6
-        ms_file.close()
+            print("Loading beam")
+            beam = Beam(freq, obstime)
+            print("Generating component list")
+            generate_componentlist(cal_file, beam)
 
-        print("Loading beam")
-        beam = Beam(freq, obstime)
-        print("Generating component list")
-        generate_componentlist(cal_file, beam)
+        print("Getting bad antennas")
+        bad_ants = get_bad_ants()
+        if bad_ants != "":
+            print("Flagging antennas: {bad_ants}")
 
-    print("Getting bad antennas")
-    bad_ants = get_bad_ants()
-    if bad_ants != "":
-        print("Flagging antennas: {bad_ants}")
-
-    print("Performing Calibration")
-    calibration_function = partial(
-        perform_cal, bad_ants=bad_ants, cal_file=cal_file, output_prefix=output_prefix
-    )
-    for filename in working_file_group:
-        calibration_function(filename)
-
-    print("Removing calibration files")
-    for path in working_file_group:
-        shutil.rmtree(path)
+        print("Performing Calibration")
+        calibration_function = partial(
+            perform_cal,
+            bad_ants=bad_ants,
+            cal_file=cal_file,
+            output_prefix=output_prefix,
+        )
+        for filename in working_file_group:
+            calibration_function(filename)
+    finally:
+        print("Removing calibration files")
+        for path in working_file_group:
+            shutil.rmtree(path)
 
 
 def partition_files(filenames: List[Path]) -> Tuple[List[Path], List[Path]]:

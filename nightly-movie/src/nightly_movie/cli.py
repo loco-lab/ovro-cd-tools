@@ -88,54 +88,56 @@ def image_snapshot():
     date_dir = output_prefix.parent
 
     working_file_group = utils.copy_files(file_group, output_prefix)
-    # Split into high and low bands
-    lowband, highband = utils.partition_files(working_file_group)
 
-    # output time in YYYYMMDD_HHMMSS
-    time_str = central_time.strftime("%Y%m%d_%H%M%S")
+    try:
+        # Split into high and low bands
+        lowband, highband = utils.partition_files(working_file_group)
 
-    highband_name_stem = f"{time_str}_highband"
-    lowband_name_stem = f"{time_str}_lowband"
+        # output time in YYYYMMDD_HHMMSS
+        time_str = central_time.strftime("%Y%m%d_%H%M%S")
 
-    highband_image = str(date_dir / highband_name_stem)
-    lowband_image = str(date_dir / lowband_name_stem)
+        highband_name_stem = f"{time_str}_highband"
+        lowband_name_stem = f"{time_str}_lowband"
 
-    highband_jpg = str(date_dir / (highband_name_stem + ".jpg"))
-    lowband_jpg = str(date_dir / (lowband_name_stem + ".jpg"))
+        highband_image = str(date_dir / highband_name_stem)
+        lowband_image = str(date_dir / lowband_name_stem)
 
-    for filename in lowband + highband:
-        apply_cal(filename, bcal_exists)
+        highband_jpg = str(date_dir / (highband_name_stem + ".jpg"))
+        lowband_jpg = str(date_dir / (lowband_name_stem + ".jpg"))
 
-    subprocess.run(
-        WSCLEAN_CMD + f"{highband_image} {' '.join(map(str, highband))}",
-        shell=True,
-        check=True,
-    )
-    subprocess.run(
-        WSCLEAN_CMD + f"{lowband_image} {' '.join(map(str, lowband))}",
-        shell=True,
-        check=True,
-    )
+        for filename in lowband + highband:
+            apply_cal(filename, bcal_exists)
 
-    for image_type, jpg_name in [
-        (highband_image, highband_jpg),
-        (lowband_image, lowband_jpg),
-    ]:
-        utils.plot_snapshot(
-            [
-                image_type + "-I-dirty.fits",
-                image_type + "-V-dirty.fits",
-            ],
-            jpg_name,
+        subprocess.run(
+            WSCLEAN_CMD + f"{highband_image} {' '.join(map(str, highband))}",
+            shell=True,
+            check=True,
+        )
+        subprocess.run(
+            WSCLEAN_CMD + f"{lowband_image} {' '.join(map(str, lowband))}",
+            shell=True,
+            check=True,
         )
 
-    print("Removing data files")
-    for path in lowband + highband:
-        shutil.rmtree(path)
+        for image_type, jpg_name in [
+            (highband_image, highband_jpg),
+            (lowband_image, lowband_jpg),
+        ]:
+            utils.plot_snapshot(
+                [
+                    image_type + "-I-dirty.fits",
+                    image_type + "-V-dirty.fits",
+                ],
+                jpg_name,
+            )
+    finally:
+        print("Removing data files")
+        for path in lowband + highband:
+            shutil.rmtree(path)
 
-    for image_type in [highband_image, lowband_image]:
-        for pol in ["I", "V"]:
-            Path(image_type + "-" + pol + "-dirty.fits").unlink()
+        for image_type in [highband_image, lowband_image]:
+            for pol in ["I", "V"]:
+                Path(image_type + "-" + pol + "-dirty.fits").unlink()
 
 
 def create_mp4():
