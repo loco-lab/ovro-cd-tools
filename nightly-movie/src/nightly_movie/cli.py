@@ -289,6 +289,10 @@ def main():
         )
         if status != 0:
             raise ValueError(f"Error spawning calibration job: {cal_job_id}")
+        else:
+            print(f"{cal_job_id}")
+            # parse the int from the output
+            cal_job_id = int(cal_job_id.split(" ")[-1])
 
     # submit each job had have them depend on calibration job if it exists
     for cnt, (central_time, file_group) in enumerate(grouped_data.items()):
@@ -308,6 +312,10 @@ def main():
         )
         if status != 0:
             raise ValueError(f"Error spawning image snapshot job: {snapshot_id}")
+        else:
+            print(f"{snapshot_id}")
+            # parse the int from the output
+            snapshot_id = int(snapshot_id.split(" ")[-1])
 
     # singleton job that depends on everything else running
     mp4_executable = str(Path(sys.executable).parent / "ovro_nightly_create_movie")
@@ -318,3 +326,5 @@ def main():
     )
     if status != 0:
         raise ValueError(f"Error spawning movie stitching job: {movie_id}")
+    else:
+        print(f"{movie_id}")
