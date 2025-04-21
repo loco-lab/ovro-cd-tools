@@ -251,7 +251,7 @@ def main():
     filelist = list(args.data_path.glob(f"*[!13MHz]*/{args.date}/*/*MHz.ms"))
     # an empty list evaluates to false.
     if not filelist:
-        raise ValueError("Unable to find any data files for: {args.date}")
+        raise ValueError(f"Unable to find any data files for: {args.date}")
 
     sub_bands = list(
         set(map(lambda x: utils.TIME_REGEX.match(str(x)).group("band"), filelist))
@@ -298,7 +298,7 @@ def main():
 
         # check if we need a dependency here
         dependency = (
-            "--dependency=afterok:{cal_job_id}" if cal_job_id is not None else ""
+            f"--dependency=afterok:{cal_job_id}" if cal_job_id is not None else ""
         )
         snapshot_log = slurm_logs / f"snapshot_{cnt:0>4}.out"
 
