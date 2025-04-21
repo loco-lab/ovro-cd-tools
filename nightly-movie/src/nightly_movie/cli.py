@@ -323,7 +323,7 @@ def main():
         snapshot_log = slurm_logs / f"snapshot_{cnt:0>4}.out"
 
         status, snapshot_id = subprocess.getstatusoutput(
-            f"sbatch {dependency} --job-name={job_name} --output={str(snapshot_log)} --mem=20G --cpus-per-task=1 "
+            f"sbatch {dependency} --job-name={job_name} --output={str(snapshot_log)} --mem=12G --cpus-per-task=1 "
             f"{snapshot_executable} {str(output_prefix)} {str(bcal_stub)} {central_time.isot} {' '.join(map(str, file_group))}"
         )
         if status != 0:
