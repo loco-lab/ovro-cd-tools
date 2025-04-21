@@ -2,19 +2,26 @@ import matplotlib  # noqa:
 
 matplotlib.use("Agg")  # noqa:
 
-import argparse
-import re
-import shutil
-import subprocess
-import sys
-from pathlib import Path
+# We need to init some casa config things
+from casaconfig import config  # noqa:
 
-import ffmpeg
-from astropy import units
-from astropy.time import Time, TimeDelta
-from casatasks import applycal, clearcal
+config.nologfile = True  # noqa:
+config.logfile = ""  # noqa:
+config.log2term = True  # noqa:
 
-from . import utils
+import argparse  # noqa: E402
+import re  # noqa: E402
+import shutil  # noqa: E402
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import ffmpeg  # noqa: E402
+from astropy import units  # noqa: E402
+from astropy.time import Time, TimeDelta  # noqa: E402
+from casatasks import applycal, clearcal  # noqa: E402
+
+from . import utils  # noqa: E402
 
 
 class DefaultRaw(
@@ -166,7 +173,7 @@ def create_mp4():
         jpg_file.unlink()
 
 
-def apply_cal(bcal_exists: bool, filename: Path):
+def apply_cal(filename: Path, bcal_exists: bool):
     filename = str(filename)
 
     clearcal(filename, addmodel=True)

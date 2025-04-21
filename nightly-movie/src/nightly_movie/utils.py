@@ -4,32 +4,38 @@
 
 # these are necessary to get the images to not need
 # a gui backend
-import shutil
-from functools import partial
+# We need to init some casa config things
 
 import matplotlib  # noqa:
 
 matplotlib.use("Agg")  # noqa:
+from casaconfig import config  # noqa:
 
-import json
-import re
-import subprocess
-from pathlib import Path
-from typing import List, Tuple, Union
+config.nologfile = True  # noqa:
+config.logfile = ""  # noqa:
+config.log2term = True  # noqa:
 
-import etcd3
-import numpy as np
-from astropy import units
-from astropy.coordinates import AltAz, SkyCoord, get_body
-from astropy.io import fits
-from astropy.time import Time, TimeDelta
-from astropy.wcs import WCS
-from casatasks import bandpass, clearcal, flagdata, ft
-from casatools import componentlist, ms
-from matplotlib import pyplot as plt
-from matplotlib.colors import Normalize
+import json  # noqa: E402
+import re  # noqa: E402
+import shutil  # noqa: E402
+import subprocess  # noqa: E402
+from functools import partial  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import List, Tuple, Union  # noqa: E402
 
-from .beam import OVRO_LOCATION, Beam
+import etcd3  # noqa: E402
+import numpy as np  # noqa: E402
+from astropy import units  # noqa: E402
+from astropy.coordinates import AltAz, SkyCoord, get_body  # noqa: E402
+from astropy.io import fits  # noqa: E402
+from astropy.time import Time, TimeDelta  # noqa: E402
+from astropy.wcs import WCS  # noqa: E402
+from casatasks import bandpass, clearcal, flagdata, ft  # noqa: E402
+from casatools import componentlist, ms  # noqa: E402
+from matplotlib import pyplot as plt  # noqa: E402
+from matplotlib.colors import Normalize  # noqa: E402
+
+from .beam import OVRO_LOCATION, Beam  # noqa: E402
 
 TIME_REGEX = re.compile(r".*(?P<date>\d{8})_(?P<hms>\d{6})_(?P<band>\d{2}MHz).ms")
 NAME_REGEX = re.compile(r".*\d{8}_\d{6}_(?P<name>[a-zA-Z]*)-.*\.fits$")
