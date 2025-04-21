@@ -116,7 +116,7 @@ def naive_calibration(file_dict: dict, output_prefix: Path):
     """
 
     # modify flux by the beam?
-    # compute calibration paramters
+    # compute calibration parameters
     obstimes = Time(list(file_dict.keys()))
     ovro_altaz = AltAz(obstime=obstimes, location=OVRO_LOCATION)
 
@@ -173,7 +173,7 @@ def naive_calibration(file_dict: dict, output_prefix: Path):
 
 
 def partition_files(filenames: List[Path]) -> Tuple[List[Path], List[Path]]:
-    """Parition a list of OVRO-LWA files into a high and low bands.
+    """Partition a list of OVRO-LWA files into a high and low bands.
 
     Highband is defined as freq > 40MHz
     Lowband is defined as freq < 40MHz
@@ -188,7 +188,7 @@ def partition_files(filenames: List[Path]) -> Tuple[List[Path], List[Path]]:
     lowband
         All lowband filenames
     highband
-        All highbnd filenames
+        All highband filenames
     """
     lowband_freqs = ["18MHz.ms", "23MHz.ms", "27MHz.ms", "32MHz.ms", "36MHz.ms"]
     lowband = []
@@ -206,7 +206,7 @@ def group_files(filenames: List[Path], time_window: TimeDelta = None) -> dict:
     """Group all the files in the input directory into 5 minute windows.
 
 
-    Paramters
+    Parameters
     ----------
     path : list[pathlib.Path]
         A list of all data file paths from the OVRO-LWA.
@@ -265,13 +265,13 @@ def group_files(filenames: List[Path], time_window: TimeDelta = None) -> dict:
 def get_central_integration(filenames: List[Path], central_time: Time) -> List[Path]:
     """Subselect a list of data files to get the integrations closes to the central time.
 
-    If a subband is missing from the integration it is ignored.
+    If a sub band is missing from the integration it is ignored.
 
 
-    Paramters
+    Parameters
     ---------
     filename : List[Path]
-        List of files in this integration to downselect.
+        List of files in this integration to down select.
     central_time : Time
         The timestamp of the central time of the window
 
@@ -321,6 +321,9 @@ def copy_files(filenames: List[Path], outdir: Path) -> List[Path]:
         filenames = [filenames]
 
     outnames = [outdir / fname.name for fname in filenames]
+
+    if not outdir.exists():
+        outdir.mkdir()
 
     for inname, outname in zip(filenames, outnames):
         subprocess.check_output(f"rsync -rz {inname}/ {outname}", shell=True)
@@ -390,7 +393,7 @@ def plot_snapshot(filename: List[Path], outname: str):
     central_freq = hdu.header["CRVAL3"] / 1e6
     hdu.header["TIMESYS"] = "utc"
     hdu.header["RADESYSa"] = "ICRS"
-    wcs = WCS(hdu.header).slice(np.s_[0, 0])  # .dropaxis(3).dropaxis(2)
+    wcs = WCS(hdu.header).slice(np.s_[0, 0])
 
     obstime = Time(
         hdu.header["DATE-OBS"],
@@ -420,7 +423,7 @@ def plot_snapshot(filename: List[Path], outname: str):
     for body in ["Sun", "Moon", "Jupiter"]:
         body_coord = get_body(body, obstime).transform_to(ovro_altaz)
         # WSClean writes things in FK5 which is barycentric despite the fact we're observing
-        # from eath so the FK5 will project to the wrong spot.
+        # from earth so the FK5 will project to the wrong spot.
         # This is worked around by ignoring their distance
 
         body_coord = SkyCoord(alt=body_coord.alt, az=body_coord.az, frame=ovro_altaz)
@@ -498,16 +501,16 @@ def plot_snapshot(filename: List[Path], outname: str):
             verticalalignment="center",
         )
 
-    bandname = NAME_REGEX.match(filename[0]).group("name")
-    plt.suptitle(hdu.header["TELESCOP"] + f"\n{bandname} {central_freq:.3f}MHz")
+    band_name = NAME_REGEX.match(filename[0]).group("name")
+    plt.suptitle(hdu.header["TELESCOP"] + f"\n{band_name} {central_freq:.3f}MHz")
     plt.savefig(outname)
     plt.close()
 
 
-def check_for_bcal(date_str: str, subbands: List[str]):
+def check_for_bcal(date_str: str, sub_bands: List[str]):
     bcal_stub = Path("/lustre/celery/bcal/")
     date_name = "".join(date_str.split("-")) + ".bcal"
-    for band in subbands:
+    for band in sub_bands:
         bcal_name = bcal_stub / band / date_name
         if not bcal_name.exists():
             print(
@@ -523,7 +526,7 @@ def get_bcal(
     output_prefix: Path,
 ):
     match = TIME_REGEX.match(filename)
-    subband = match.group("band")
+    sub_band = match.group("band")
     date_name = match.group("date") + ".bcal"
 
-    return str(output_prefix / subband / date_name)
+    return str(output_prefix / sub_band / date_name)
