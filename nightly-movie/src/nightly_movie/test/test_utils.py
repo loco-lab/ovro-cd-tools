@@ -110,12 +110,12 @@ def test_one_group():
 
 
 def test_copy_files(tmp_path):
-    indir = tmp_path / "data.ms"
-    indir.mkdir()
+    in_dir = tmp_path / "data.ms"
+    in_dir.mkdir()
 
     outdir = tmp_path / "out"
 
-    infile = indir / "test.txt"
+    infile = in_dir / "test.txt"
     infile.write_text("Hello, World!")
 
     outfile = outdir / "data.ms"
@@ -123,7 +123,7 @@ def test_copy_files(tmp_path):
     assert infile.exists()
     assert not outdata.exists()
 
-    outfiles = utils.copy_files(indir, outdir)
+    outfiles = utils.copy_files(in_dir, outdir)
 
     assert outfile.exists()
     assert outdata.exists()

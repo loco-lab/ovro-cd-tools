@@ -101,7 +101,25 @@ def perform_cal(filename: Path, bad_ants: str, cal_file: Path, output_prefix: Pa
         )
 
 
-def naive_calibration(file_dict: dict, output_prefix: Path):
+def get_calibration_files(file_dict: dict) -> List[Path]:
+    obstimes = Time(list(file_dict.keys()))
+    ovro_altaz = AltAz(obstime=obstimes, location=OVRO_LOCATION)
+
+    CasA = ATEAM_SOURCES["Cas A"]
+    CasA_altaz = CasA.transform_to(ovro_altaz)
+
+    # find time where Cas A alt is highest
+    cal_ind = np.argmax(CasA_altaz.alt)
+    calibration_key = list(file_dict.keys())[cal_ind]
+    # copy file
+    cal_group = file_dict[calibration_key]
+    #  get central_integration
+    file_group = get_central_integration(cal_group, calibration_key)
+
+    return file_group
+
+
+def naive_calibration(file_group: List[Path], output_prefix: Path):
     """Perform a naive 5 component calibration on a set of files.
 
     This function will find the file where Cas A is closest to zenith.
@@ -117,19 +135,6 @@ def naive_calibration(file_dict: dict, output_prefix: Path):
 
     # modify flux by the beam?
     # compute calibration parameters
-    obstimes = Time(list(file_dict.keys()))
-    ovro_altaz = AltAz(obstime=obstimes, location=OVRO_LOCATION)
-
-    CasA = ATEAM_SOURCES["Cas A"]
-    CasA_altaz = CasA.transform_to(ovro_altaz)
-
-    # find time where Cas A alt is highest
-    cal_ind = np.argmax(CasA_altaz.alt)
-    calibration_key = list(file_dict.keys())[cal_ind]
-    # copy file
-    cal_group = file_dict[calibration_key]
-    #  get central_integration
-    file_group = get_central_integration(cal_group, calibration_key)
     print("\tCopying Files for calibration")
     working_file_group = copy_files(file_group, output_prefix)
 

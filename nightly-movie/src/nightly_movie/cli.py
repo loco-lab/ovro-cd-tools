@@ -7,13 +7,11 @@ import re
 import shutil
 import subprocess
 import sys
-from functools import partial
-from multiprocessing import Pool
 from pathlib import Path
 
 import ffmpeg
 from astropy import units
-from astropy.time import TimeDelta
+from astropy.time import Time, TimeDelta
 from casatasks import applycal, clearcal
 
 from . import utils
@@ -37,137 +35,128 @@ WSCLEAN_CMD = (
 )
 
 
-def main():
-    """Command line script to automatically group data and perform imaging every night."""
+def image_snapshot():
     parser = argparse.ArgumentParser(
-        prog="ovro_nightly_movie",
+        prog="ovro_nightly_image_snapshot",
         description=(
-            "Groups data in windowed chunks, images each chunk, then stitches all the imgaes into a movie."
-            "This program searches for all data corresponding to <date> below."
+            "Create a jpg image from the time snapshot. YOU SHOULD NOT BE CALLING THIS DIRECTLY.\n "
+            "This script is called as part of ovro_nightly_movie when submitting a slurm job."
         ),
         formatter_class=DefaultRaw,
     )
 
     parser.add_argument(
-        "date",
-        type=str,
-        help=(
-            "The date for which a movie will be made."
-            "This should look like YYYY-MM-DD the same as the dates in data directories."
-        ),
-    )
-
-    parser.add_argument(
-        "--interval",
-        "-i",
-        required=False,
-        type=float,
-        default=5.0,
-        help=("The interval in minutes the data will be grouped into."),
-    )
-
-    parser.add_argument(
-        "--datapath",
-        "-d",
-        required=False,
+        "output_prefix",
+        nargs=1,
+        required=True,
         type=Path,
-        default=Path("/lustre/pipeline/slow"),
+    )
+    parser.add_argument(
+        "bcal_exists",
+        nargs=1,
+        required=True,
+        type=bool,
+    )
+
+    parser.add_argument(
+        "central_time",
+        nargs=1,
+        required=True,
+        type=lambda d: Time(d, format="isot"),
+        help="ISOT formatted central integration time in this group",
+    )
+
+    parser.add_argument(
+        "file_group",
+        type=Path,
+        nargs="+",
+        help="List of files to calibration",
     )
 
     args = parser.parse_args()
 
-    # group all files
+    central_time = args.central_time
+    file_group = args.file_group
+    output_prefix = args.output_prefix
+    bcal_exists = args.bcal_exists
 
-    if DATE_REGEX.match(args.date) is None:
-        raise ValueError("Input date must be a date in the format YYYY-MM-DD")
+    print(f"Working on {args.central_time.iso}")
+    file_group = utils.get_central_integration(args.file_group, central_time)
+    print("\tCopying Files")
 
-    filelist = list(args.datapath.glob(f"*[!13MHz]*/{args.date}/*/*MHz.ms"))
+    date_dir = output_prefix.parent
 
-    subbands = list(
-        set(map(lambda x: utils.TIME_REGEX.match(str(x)).group("band"), filelist))
+    working_file_group = utils.copy_files(file_group, output_prefix)
+    # Split into high and low bands
+    lowband, highband = utils.partition_files(working_file_group)
+
+    # output time in YYYYMMDD_HHMMSS
+    time_str = central_time.strftime("%Y%m%d_%H%M%S")
+
+    highband_name_stem = f"{time_str}_highband"
+    lowband_name_stem = f"{time_str}_lowband"
+
+    highband_image = str(date_dir / highband_name_stem)
+    lowband_image = str(date_dir / lowband_name_stem)
+
+    highband_jpg = str(date_dir / (highband_name_stem + ".jpg"))
+    lowband_jpg = str(date_dir / (lowband_name_stem + ".jpg"))
+
+    for filename in lowband + highband:
+        apply_cal(filename, bcal_exists)
+
+    subprocess.run(
+        WSCLEAN_CMD + f"{highband_image} {' '.join(map(str, highband))}",
+        shell=True,
+        check=True,
+    )
+    subprocess.run(
+        WSCLEAN_CMD + f"{lowband_image} {' '.join(map(str, lowband))}",
+        shell=True,
+        check=True,
     )
 
-    bcal_exists = utils.check_for_bcal(args.date, subbands)
-    calibration_function = partial(apply_cal, bcal_exists)
-
-    print("Grouping data files")
-    # switch to a central time in a 5min window. Don't use the entire window.
-    grouped_data = utils.group_files(filelist, TimeDelta(args.interval * units.min))
-
-    # TODO: General bleach the absolute paths somehow
-    date_dir = Path("/lustre/mkolopanis/movies") / args.date
-    output_prefix = date_dir / "data"
-
-    # make the date's directory in the staging area.
-    output_prefix.mkdir(parents=True, exist_ok=True)
-
-    if not bcal_exists:
-        print("No bcal files found. generating naive calibration")
-        utils.naive_calibration(grouped_data, output_prefix)
-
-    for central_time, file_group in grouped_data.items():
-        print(f"Working on {central_time.iso}")
-        file_group = utils.get_central_integration(file_group, central_time)
-        print("\tCopying Files")
-        working_file_group = utils.copy_files(file_group, output_prefix)
-        # Split into high and low bands
-        lowband, highband = utils.partition_files(working_file_group)
-
-        # output time in YYYYMMDD_HHMMSS
-        time_str = central_time.strftime("%Y%m%d_%H%M%S")
-
-        highband_name_stem = f"{time_str}_highband"
-        lowband_name_stem = f"{time_str}_lowband"
-
-        highband_image = str(date_dir / highband_name_stem)
-        lowband_image = str(date_dir / lowband_name_stem)
-
-        highband_jpg = str(date_dir / (highband_name_stem + ".jpg"))
-        lowband_jpg = str(date_dir / (lowband_name_stem + ".jpg"))
-
-        for filename in lowband + highband:
-            calibration_function(filename)
-
-        subprocess.run(
-            WSCLEAN_CMD + f"{highband_image} {' '.join(map(str, highband))}",
-            shell=True,
-            check=True,
-        )
-        subprocess.run(
-            WSCLEAN_CMD + f"{lowband_image} {' '.join(map(str, lowband))}",
-            shell=True,
-            check=True,
+    for image_type, jpg_name in [
+        (highband_image, highband_jpg),
+        (lowband_image, lowband_jpg),
+    ]:
+        utils.plot_snapshot(
+            [
+                image_type + "-I-dirty.fits",
+                image_type + "-V-dirty.fits",
+            ],
+            jpg_name,
         )
 
-        with Pool(2) as p:
-            p.starmap(
-                utils.plot_snapshot,
-                [
-                    (
-                        [
-                            highband_image + "-I-dirty.fits",
-                            highband_image + "-V-dirty.fits",
-                        ],
-                        highband_jpg,
-                    ),
-                    (
-                        [
-                            lowband_image + "-I-dirty.fits",
-                            lowband_image + "-V-dirty.fits",
-                        ],
-                        lowband_jpg,
-                    ),
-                ],
-            )
-        print("Removing data files")
-        for path in lowband + highband:
-            shutil.rmtree(path)
+    print("Removing data files")
+    for path in lowband + highband:
+        shutil.rmtree(path)
 
-        for image_type in [highband_image, lowband_image]:
-            for pol in ["I", "V"]:
-                Path(image_type + "-" + pol + "-dirty.fits").unlink()
+    for image_type in [highband_image, lowband_image]:
+        for pol in ["I", "V"]:
+            Path(image_type + "-" + pol + "-dirty.fits").unlink()
 
-    date_str = "".join(args.date.split("-"))
+
+def create_mp4():
+    parser = argparse.ArgumentParser(
+        prog="ovro_nightly_create_movie",
+        description=(
+            "Stitches all image files into an mp4. YOU SHOULD NOT BE CALLING THIS DIRECTLY.\n "
+            "This script is called as part of ovro_nightly_movie when submitting a slurm job."
+        ),
+        formatter_class=DefaultRaw,
+    )
+
+    parser.add_argument(
+        "date_dir",
+        nargs=1,
+        required=True,
+        type=Path,
+    )
+    args = parser.parse_args()
+    date_dir = args.date_dir
+
+    date_str = date_dir.name.replace("-", "")
     for name in ["highband", "lowband"]:
         ffmpeg.input(
             f"{date_dir}/*{name}.jpg",
@@ -196,3 +185,139 @@ def apply_cal(bcal_exists: bool, filename: Path):
         bcal = utils.get_bcal(filename, Path(filename).parent)
 
     applycal(filename, gaintable=[bcal], flagbackup=False)
+
+
+def naive_calibration():
+    parser = argparse.ArgumentParser(
+        prog="ovro_nightly_naive_calibration",
+        description=(
+            "Performs a naive calibration of ovro data for nightly movie making. YOU SHOULD NOT BE CALLING THIS DIRECTLY.\n "
+            "This script is called as part of ovro_nightly_movie when submitting a slurm job."
+        ),
+        formatter_class=DefaultRaw,
+    )
+
+    parser.add_argument(
+        "output_prefix",
+        nargs=1,
+        required=True,
+        type=Path,
+    )
+    parser.add_argument(
+        "calibration_file_group",
+        type=Path,
+        nargs="+",
+        help="List of files to calibration",
+    )
+
+    args = parser.parse_args()
+    utils.naive_calibration(args.calibration_file_group, args.output_prefix)
+
+
+def main():
+    """Command line script to automatically group data and perform imaging every night."""
+    parser = argparse.ArgumentParser(
+        prog="ovro_nightly_movie",
+        description=(
+            "Groups data in windowed chunks, images each chunk, then stitches all the images into a movie."
+            "This program searches for all data corresponding to <date> below."
+        ),
+        formatter_class=DefaultRaw,
+    )
+
+    parser.add_argument(
+        "date",
+        type=str,
+        help=(
+            "The date for which a movie will be made."
+            "This should look like YYYY-MM-DD the same as the dates in data directories."
+        ),
+    )
+
+    parser.add_argument(
+        "--interval",
+        "-i",
+        required=False,
+        type=float,
+        default=5.0,
+        help=("The interval in minutes the data will be grouped into."),
+    )
+
+    parser.add_argument(
+        "--data_path",
+        "-d",
+        required=False,
+        type=Path,
+        default=Path("/lustre/pipeline/slow"),
+    )
+
+    args = parser.parse_args()
+
+    # group all files
+
+    if DATE_REGEX.match(args.date) is None:
+        raise ValueError("Input date must be a date in the format YYYY-MM-DD")
+
+    filelist = list(args.data_path.glob(f"*[!13MHz]*/{args.date}/*/*MHz.ms"))
+    # an empty list evaluates to false.
+    if not filelist:
+        raise ValueError("Unable to find any data files for: {args.date}")
+
+    sub_bands = list(
+        set(map(lambda x: utils.TIME_REGEX.match(str(x)).group("band"), filelist))
+    )
+    bcal_exists = utils.check_for_bcal(args.date, sub_bands)
+
+    print("Grouping data files")
+    # switch to a central time in a 5min window. Don't use the entire window.
+    grouped_data = utils.group_files(filelist, TimeDelta(args.interval * units.min))
+
+    date_dir = Path("/lustre/mkolopanis/movies") / args.date
+    date_str = args.date.replace("-", "")
+
+    output_prefix = date_dir / "data"
+
+    # make the date's directory in the staging area.
+    output_prefix.mkdir(parents=True, exist_ok=True)
+    job_name = f"nightly_movie_{date_str}"
+    cal_job_id = None
+    if not bcal_exists:
+        calibration_file_group = utils.get_calibration_files(grouped_data)
+        print("No bcal files found. generating naive calibration")
+        # create calibration job assign it to job_id
+        cal_executable = str(
+            Path(sys.executable).parent / "ovro_nightly_naive_calibration"
+        )
+        status, cal_job_id = subprocess.getstatusoutput(
+            f"sbatch --job-name={job_name} --mem=20G --cpus-per-task=1 {cal_executable} "
+            f"{str(output_prefix)} {' '.join(map(str, calibration_file_group))}"
+        )
+        if status != 0:
+            raise ValueError(f"Error spawning calibration job: {cal_job_id}")
+
+    # submit each job had have them depend on calibration job if it exists
+    for central_time, file_group in grouped_data.items():
+        snapshot_executable = str(
+            Path(sys.executable).parent / "ovro_nightly_image_snapshot"
+        )
+
+        # check if we need a dependency here
+        dependency = (
+            "--dependency=afterok:{cal_job_id}" if cal_job_id is not None else ""
+        )
+
+        status, snapshot_id = subprocess.getstatusoutput(
+            f"sbatch {dependency} --job-name={job_name} --mem=20G --cpus-per-task=1 "
+            f"{snapshot_executable} {str(output_prefix)} {bcal_exists} {central_time.isot} {' '.join(map(str, file_group))}"
+        )
+        if status != 0:
+            raise ValueError(f"Error spawning image snapshot job: {snapshot_id}")
+
+    # singleton job that depends on everything else running
+    mp4_executable = str(Path(sys.executable).parent / "ovro_nightly_create_movie")
+    status, snapshot_id = subprocess.getstatusoutput(
+        f"sbatch --dependency=singleton --job-name={job_name} --mem=5G --cpus-per-task=1 "
+        f"{mp4_executable} {str(date_dir)}"
+    )
+    if status != 0:
+        raise ValueError(f"Error spawning image snapshot job: {snapshot_id}")

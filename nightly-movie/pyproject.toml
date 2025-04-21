@@ -15,7 +15,10 @@
 
 
  [project.scripts]
-  ovro_nightly_movie = "nightly_movie.cli:main"
+  ovro_nightly_movie             = "nightly_movie.cli:main"
+  ovro_nightly_naive_calibration = "nightly_movie.cli:naive_calibration"
+  ovro_nightly_image_snapshot    = "nightly_movie.cli:image_snapshot"
+  ovro_nightly_create_movie      = "nightly_movie.cli:create_mp4"
 
 
 [tool.hatch]
