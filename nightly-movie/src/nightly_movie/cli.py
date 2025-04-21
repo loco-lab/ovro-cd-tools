@@ -312,9 +312,9 @@ def main():
     # singleton job that depends on everything else running
     mp4_executable = str(Path(sys.executable).parent / "ovro_nightly_create_movie")
     movie_log = slurm_logs / "movie.out"
-    status, snapshot_id = subprocess.getstatusoutput(
+    status, movie_id = subprocess.getstatusoutput(
         f"sbatch --dependency=singleton --output={str(movie_log)} --job-name={job_name} --mem=5G --cpus-per-task=1 "
         f"{mp4_executable} {str(date_dir)}"
     )
     if status != 0:
-        raise ValueError(f"Error spawning image snapshot job: {snapshot_id}")
+        raise ValueError(f"Error spawning movie stitching job: {movie_id}")
