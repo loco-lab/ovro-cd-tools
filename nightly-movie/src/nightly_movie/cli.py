@@ -272,9 +272,13 @@ def main():
 
     output_prefix = date_dir / "data"
 
+    slurm_logs = date_dir / "logs"
+
     # make the date's directory in the staging area.
     output_prefix.mkdir(parents=True, exist_ok=True)
     job_name = f"nightly_movie_{date_str}"
+    slurm_logs.mkdir(exist_ok=True)
+
     cal_job_id = None
     if not bcal_exists:
         calibration_file_group = utils.get_calibration_files(grouped_data)
@@ -283,15 +287,16 @@ def main():
         cal_executable = str(
             Path(sys.executable).parent / "ovro_nightly_naive_calibration"
         )
+        cal_log = slurm_logs / "calibration.out"
         status, cal_job_id = subprocess.getstatusoutput(
-            f"sbatch --job-name={job_name} --mem=20G --cpus-per-task=1 {cal_executable} "
+            f"sbatch --job-name={job_name} --output={str(cal_log)} --mem=20G --cpus-per-task=1 {cal_executable} "
             f"{str(output_prefix)} {' '.join(map(str, calibration_file_group))}"
         )
         if status != 0:
             raise ValueError(f"Error spawning calibration job: {cal_job_id}")
 
     # submit each job had have them depend on calibration job if it exists
-    for central_time, file_group in grouped_data.items():
+    for cnt, (central_time, file_group) in enumerate(grouped_data.items()):
         snapshot_executable = str(
             Path(sys.executable).parent / "ovro_nightly_image_snapshot"
         )
@@ -300,9 +305,10 @@ def main():
         dependency = (
             "--dependency=afterok:{cal_job_id}" if cal_job_id is not None else ""
         )
+        snapshot_log = slurm_logs / f"snapshot_{cnt:0>4}.out"
 
         status, snapshot_id = subprocess.getstatusoutput(
-            f"sbatch {dependency} --job-name={job_name} --mem=20G --cpus-per-task=1 "
+            f"sbatch {dependency} --job-name={job_name} --output={str(snapshot_log)} --mem=20G --cpus-per-task=1 "
             f"{snapshot_executable} {str(output_prefix)} {bcal_exists} {central_time.isot} {' '.join(map(str, file_group))}"
         )
         if status != 0:
@@ -310,8 +316,9 @@ def main():
 
     # singleton job that depends on everything else running
     mp4_executable = str(Path(sys.executable).parent / "ovro_nightly_create_movie")
+    movie_log = slurm_logs / "movie.out"
     status, snapshot_id = subprocess.getstatusoutput(
-        f"sbatch --dependency=singleton --job-name={job_name} --mem=5G --cpus-per-task=1 "
+        f"sbatch --dependency=singleton --output={str(movie_log)} --job-name={job_name} --mem=5G --cpus-per-task=1 "
         f"{mp4_executable} {str(date_dir)}"
     )
     if status != 0:
