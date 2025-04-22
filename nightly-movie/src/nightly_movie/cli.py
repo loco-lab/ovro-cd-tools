@@ -166,7 +166,7 @@ def create_mp4():
             ),
         ).overwrite_output().run(cmd=str(Path(sys.executable).parent / "ffmpeg"))
 
-    print("Removing intermediate JPG date_strfiles")
+    print("Removing intermediate JPG files")
     for jpg_file in Path(f"{date_dir}").glob("*.jpg"):
         jpg_file.unlink()
 
