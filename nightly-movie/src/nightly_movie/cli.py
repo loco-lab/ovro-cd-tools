@@ -132,6 +132,7 @@ def image_snapshot():
         for image_type in [highband_image, lowband_image]:
             for pol in ["I", "V"]:
                 Path(image_type + "-" + pol + "-dirty.fits").unlink()
+                Path(image_type + "-" + pol + "-image.fits").unlink()
 
     print(f"{Time.now().iso}: Image Snapshot Complete", flush=True)
 
