@@ -30,7 +30,7 @@ DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 COMPONENT_LIST = str(Path("/lustre/mkolopanis/movies") / "ovro_ateam.cl")
 
 WSCLEAN_CMD = (
-    "OPENBLAS_NUM_THREADS=1 /opt/bin/wsclean -j 16 -mem 30 -multiscale "
+    "OPENBLAS_NUM_THREADS=1 /opt/bin/wsclean -j 1 -abs-mem 12 -multiscale "
     "-multiscale-scale-bias 0.8 -pol IV -size 4096 4096 -scale 0.03125 "
     "-niter 0 -casa-mask /home/pipeline/cleanmask.mask/ -mgain 0.85 "
     "-weight briggs 0 -name "
@@ -166,7 +166,7 @@ def create_mp4():
             ),
         ).overwrite_output().run(cmd=str(Path(sys.executable).parent / "ffmpeg"))
 
-    print("Removing intermediate JPG files")
+    print("Removing intermediate JPG files", flush=True)
     for jpg_file in Path(f"{date_dir}").glob("*.jpg"):
         jpg_file.unlink()
 
@@ -176,7 +176,7 @@ def create_mp4():
         for pol in ["I", "V"]:
             for image_type in ["image", "dirty"]:
                 file_stub = f"{image_band}-{pol}-{image_type}.fits"
-                filenames = sorted(Path(f"{date_dir}/data").glob("*" + file_stub))
+                filenames = sorted(Path(f"{date_dir}").glob("*" + file_stub))
 
                 outfile = date_dir / (date_str + file_stub)
 
@@ -186,9 +186,8 @@ def create_mp4():
     with tarfile.open(date_dir / "logs.tgz", "w:gz") as tar:
         tar.add(date_dir / "logs", arcname="logs")  # cspell:disable-line
     # remove the individual log files
-    shutil.rmtree(date_dir / "logs")
-
     print(f"{Time.now().iso}: Movie Stitching Complete", flush=True)
+    shutil.rmtree(date_dir / "logs")
 
 
 def apply_cal(filename: Path, bcal_path: Path):
