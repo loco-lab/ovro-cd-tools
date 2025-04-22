@@ -1,3 +1,5 @@
+import tarfile
+
 import matplotlib  # noqa:
 
 matplotlib.use("Agg")  # noqa:
@@ -125,14 +127,9 @@ def image_snapshot():
                 jpg_name,
             )
     finally:
-        print("Removing data files")
+        print("Removing Raw data files")
         for path in lowband + highband:
             shutil.rmtree(path)
-
-        for image_type in [highband_image, lowband_image]:
-            for pol in ["I", "V"]:
-                Path(image_type + "-" + pol + "-dirty.fits").unlink()
-                Path(image_type + "-" + pol + "-image.fits").unlink()
 
     print(f"{Time.now().iso}: Image Snapshot Complete", flush=True)
 
@@ -169,9 +166,27 @@ def create_mp4():
             ),
         ).overwrite_output().run(cmd=str(Path(sys.executable).parent / "ffmpeg"))
 
-    print("Removing intermediate JPG files")
+    print("Removing intermediate JPG date_strfiles")
     for jpg_file in Path(f"{date_dir}").glob("*.jpg"):
         jpg_file.unlink()
+
+    print("Consolidating Fits Files")
+    # combine all the fits files into their own group
+    for image_band in ["highband", "lowband"]:
+        for pol in ["I", "V"]:
+            for image_type in ["image", "dirty"]:
+                file_stub = f"{image_band}-{pol}-{image_type}.fits"
+                filenames = sorted(Path(f"{date_dir}/data").glob("*" + file_stub))
+
+                outfile = date_dir / (date_str + file_stub)
+
+                utils.combine_fits_files(filenames, outfile)
+
+    print("Compressing Logs")
+    with tarfile.open(date_dir / "logs.tgz", "w:gz") as tar:
+        tar.add(date_dir / "logs", arcname="logs")  # cspell:disable-line
+    # remove the individual log files
+    shutil.rmtree(date_dir / "logs")
 
     print(f"{Time.now().iso}: Movie Stitching Complete", flush=True)
 

@@ -535,3 +535,12 @@ def get_bcal(
     date_name = match.group("date") + ".bcal"
 
     return str(output_prefix / sub_band / date_name)
+
+
+def combine_fits_files(filenames: List[Path], outfile: Path):
+    for filename in sorted(filenames):
+        # append this image to the consolidated file
+        with fits.open(filename) as hdu:
+            fits.append(outfile, hdu[0].data, hdu[0].header)
+        # remove the snapshot file
+        filename.unlink()
