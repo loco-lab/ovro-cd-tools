@@ -178,7 +178,7 @@ def create_mp4():
                 file_stub = f"{image_band}-{pol}-{image_type}.fits"
                 filenames = sorted(Path(f"{date_dir}").glob("*" + file_stub))
 
-                outfile = date_dir / (date_str + file_stub)
+                outfile = date_dir / (date_str + "_" + file_stub)
 
                 utils.combine_fits_files(filenames, outfile)
 
