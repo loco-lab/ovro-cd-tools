@@ -172,10 +172,11 @@ def create_mp4():
     date_dir = args.date_dir
     staging_date_dir = date_dir.name
 
-    fast_dir = f"/fast/mkolopanis/{staging_date_dir}"
+    fast_dir = f"/fast/mkolopanis/movies/{staging_date_dir}"
     print(f"{Time.now().iso}: Removing /fast staging areas")
     subprocess.check_output(
-        f"pdsh -w lwacalim[00-10] 'if [ -d \"{fast_dir}\" ]; then rm -r {fast_dir}; fi'"
+        f"pdsh -w lwacalim[00-10] 'if [ -d \"{fast_dir}\" ]; then rm -r {fast_dir}; fi'",
+        shell=True,
     )
 
     print(f"{Time.now().iso}: Cleaning up any remaining flag files")
