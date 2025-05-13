@@ -142,7 +142,7 @@ def image_snapshot():
         print(f"{Time.now().iso}: Moving output data products", flush=True)
         #  move the fits and jpg files from staging to output
         for fname in itertools.chain(date_dir.glob("*.jpg"), date_dir.glob("*.fits")):
-            fname.rename(output_prefix / fname.name)
+            shutil.move(fname, output_prefix / fname.name)
 
     finally:
         print(f"{Time.now().iso}: Removing Raw data files")
