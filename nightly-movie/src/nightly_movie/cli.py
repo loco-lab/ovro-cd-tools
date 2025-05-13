@@ -163,9 +163,22 @@ def create_mp4():
         type=Path,
     )
     args = parser.parse_args()
-    print(f"{Time.now().iso}: Starting Movie Stitching", flush=True)
+    print(f"{Time.now().iso}", flush=True)
 
     date_dir = args.date_dir
+    staging_date_dir = date_dir.name
+
+    fast_dir = f"/fast/mkolopanis/{staging_date_dir}"
+    print(f"{Time.now().iso}: Removing /fast staging areas")
+    subprocess.check_output(
+        f"pdsh -w lwacalim[00-10] 'if [ -d \"{fast_dir}\" ]; then rm -r {fast_dir}; fi'"
+    )
+
+    print(f"{Time.now().iso}: Cleaning up any remaining flag files")
+    for fname in (date_dir / "data").glob("*.flagversions"):
+        shutil.rmtree(fname)
+
+    print(f"{Time.now().iso}: Starting Movie Stitching", flush=True)
 
     date_str = date_dir.name.replace("-", "")
     for name in ["highband", "lowband"]:
@@ -371,7 +384,7 @@ def main():
     movie_log = slurm_logs / "movie.out"
     status, movie_id = subprocess.getstatusoutput(
         f"sbatch --dependency=singleton --output={str(movie_log)} --job-name={job_name} --mem=5G --cpus-per-task=1 "
-        f"{mp4_executable} {str(date_dir)}"
+        f"{mp4_executable} {str(output_date_dir)}"
     )
     if status != 0:
         raise ValueError(f"Error spawning movie stitching job: {movie_id}")
