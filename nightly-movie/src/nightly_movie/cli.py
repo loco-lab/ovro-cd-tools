@@ -110,9 +110,11 @@ def image_snapshot():
         highband_jpg = str(date_dir / (highband_name_stem + ".jpg"))
         lowband_jpg = str(date_dir / (lowband_name_stem + ".jpg"))
 
+        print(f"{Time.now().iso}: Applying calibration", flush=True)
         for filename in lowband + highband:
             apply_cal(filename, bcal)
 
+        print(f"{Time.now().iso}: Creating Fits output", flush=True)
         subprocess.run(
             WSCLEAN_CMD + f"{highband_image} {' '.join(map(str, highband))}",
             shell=True,
@@ -124,6 +126,7 @@ def image_snapshot():
             check=True,
         )
 
+        print(f"{Time.now().iso}: Plotting jpgs", flush=True)
         for image_type, jpg_name in [
             (highband_image, highband_jpg),
             (lowband_image, lowband_jpg),
@@ -136,12 +139,13 @@ def image_snapshot():
                 jpg_name,
             )
 
+        print(f"{Time.now().iso}: Moving output data products", flush=True)
         #  move the fits and jpg files from staging to output
         for fname in itertools.chain(date_dir.glob("*.jpg"), date_dir.glob("*.fits")):
             fname.rename(output_prefix / fname.name)
 
     finally:
-        print("Removing Raw data files")
+        print(f"{Time.now().iso}: Removing Raw data files")
         for path in lowband + highband:
             shutil.rmtree(path)
 
