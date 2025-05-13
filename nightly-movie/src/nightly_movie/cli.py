@@ -1,3 +1,4 @@
+import itertools
 import tarfile
 
 import matplotlib  # noqa:
@@ -48,6 +49,11 @@ def image_snapshot():
     )
 
     parser.add_argument(
+        "staging_prefix",
+        type=Path,
+    )
+
+    parser.add_argument(
         "output_prefix",
         type=Path,
     )
@@ -74,6 +80,7 @@ def image_snapshot():
 
     central_time = args.central_time
     file_group = args.file_group
+    staging_prefix = args.staging_prefix
     output_prefix = args.output_prefix
     bcal = args.bcal
 
@@ -81,9 +88,11 @@ def image_snapshot():
     file_group = utils.get_central_integration(args.file_group, central_time)
     print("\tCopying Files")
 
-    date_dir = output_prefix.parent
+    date_dir = staging_prefix.parent
+    # make directories in the staging/output area for this node if necessary
 
-    working_file_group = utils.copy_files(file_group, output_prefix)
+    staging_prefix.mkdir(parents=True, exist_ok=True)
+    working_file_group = utils.copy_files(file_group, staging_prefix)
 
     try:
         # Split into high and low bands
@@ -126,6 +135,11 @@ def image_snapshot():
                 ],
                 jpg_name,
             )
+
+        #  move the fits and jpg files from staging to output
+        for fname in itertools.chain(date_dir.glob("*.jpg"), date_dir.glob("*.fits")):
+            fname.rename(output_prefix / fname.name)
+
     finally:
         print("Removing Raw data files")
         for path in lowband + highband:
@@ -276,12 +290,16 @@ def main():
     if not filelist:
         raise ValueError(f"Unable to find any data files for: {args.date}")
 
-    date_dir = Path("/lustre/mkolopanis/movies") / args.date
+    date_dir = Path("mkolopanis/movies") / args.date
     date_str = args.date.replace("-", "")
 
-    output_prefix = date_dir / "data"
+    output_date_dir = "/lustre" / date_dir
+    staging_date_dir = "/fast" / date_dir
 
-    slurm_logs = date_dir / "logs"
+    output_prefix = output_date_dir / "data"
+    slurm_logs = output_date_dir / "logs"
+
+    staging_data = staging_date_dir / "data"
 
     sub_bands = list(
         set(map(lambda x: utils.TIME_REGEX.match(str(x)).group("band"), filelist))
@@ -339,7 +357,7 @@ def main():
 
         status, snapshot_id = subprocess.getstatusoutput(
             f"sbatch {dependency} --job-name={job_name} --output={str(snapshot_log)} --mem=12G --cpus-per-task=1 "
-            f"{snapshot_executable} {str(output_prefix)} {str(bcal_stub)} {central_time.isot} {' '.join(map(str, file_group))}"
+            f"{snapshot_executable} {str(staging_data)} {str(output_date_dir)} {str(bcal_stub)} {central_time.isot} {' '.join(map(str, file_group))}"
         )
         if status != 0:
             raise ValueError(f"Error spawning image snapshot job: {snapshot_id}")
