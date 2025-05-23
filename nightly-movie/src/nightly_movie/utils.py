@@ -152,6 +152,10 @@ def naive_calibration(file_group: List[Path], output_prefix: Path):
                 format="mjd",
                 scale="utc",
             ) + TimeDelta(time_info["IntegrationTime"] / 2, format="sec")
+
+            cal_time_file = output_prefix / "cal_time.txt"
+            cal_time_file.write_text(f"{obstime.isot} UTC", encoding="utf-8")
+
             # get the reference frequency in MHz
             freq = ms_file.getspectralwindowinfo()["0"]["RefFreq"] / 1e6
             ms_file.close()
@@ -393,13 +397,18 @@ def generate_componentlist(componentlist_name: Path, beam: Beam):
 def plot_snapshot(filename: List[Path], outname: str):
     """Plot the input snapshot with WCS and timestamp"""
 
+    if not all(isinstance(f, Path) for f in filename):
+        filename = [Path(f) for f in filename]
+
     if "highband" in outname:
         norm = Normalize(vmin=-5, vmax=50)
     else:
         norm = Normalize(vmin=-5, vmax=250)
 
     hdu = fits.open(filename[0])[0]
-    central_freq = hdu.header["CRVAL3"] / 1e6
+    central_freq = hdu.header["CRVAL3"] * units.Hz
+    freq_delta = hdu.header["CDELT3"] * units.Hz
+
     hdu.header["TIMESYS"] = "utc"
     hdu.header["RADESYSa"] = "ICRS"
     wcs = WCS(hdu.header).slice(np.s_[0, 0])
@@ -429,6 +438,7 @@ def plot_snapshot(filename: List[Path], outname: str):
     axes[1].imshow(hdu.data[0, 0, :, :] * 10, norm=norm, origin="lower")
     axes[1].set_title("V * 10")
 
+    # Plot some common solar system bodies.
     for body in ["Sun", "Moon", "Jupiter"]:
         body_coord = get_body(body, obstime).transform_to(ovro_altaz)
         # WSClean writes things in FK5 which is barycentric despite the fact we're observing
@@ -456,6 +466,7 @@ def plot_snapshot(filename: List[Path], outname: str):
                 verticalalignment="bottom",
             )
 
+    # Mark A-Team sources!
     for source, coord in ATEAM_SOURCES.items():
         pixel_coords = wcs.world_to_pixel(coord)
         for ax in axes:
@@ -476,6 +487,7 @@ def plot_snapshot(filename: List[Path], outname: str):
                 verticalalignment="bottom",
             )
 
+    # Add the time stamp of this image
     fig.text(
         0.5,
         0.075,
@@ -485,6 +497,24 @@ def plot_snapshot(filename: List[Path], outname: str):
         color="w",
         verticalalignment="center",
     )
+
+    # calibration timestamp
+    cal_file = filename[0].parent / "data" / "cal_time.txt"
+    if cal_file.exists():
+        cal_timestamp = cal_file.read_text().strip()
+    else:
+        cal_timestamp = "UNKNOWN"
+
+    fig.text(
+        0.5,
+        0.1325,
+        f"cal: {cal_timestamp}",
+        horizontalalignment="center",
+        verticalalignment="center",
+        fontsize=9,
+    )
+
+    # Add compass directions
     for ax in axes:
         xmax = ax.get_xlim()[1]
         ymax = ax.get_ylim()[1]
@@ -510,8 +540,13 @@ def plot_snapshot(filename: List[Path], outname: str):
             verticalalignment="center",
         )
 
-    band_name = NAME_REGEX.match(filename[0]).group("name")
-    plt.suptitle(hdu.header["TELESCOP"] + f"\n{band_name} {central_freq:.3f}MHz")
+    band_name = NAME_REGEX.match(filename[0].name).group("name")
+
+    plt.suptitle(
+        hdu.header["TELESCOP"]
+        + f" {band_name}\n({(central_freq - freq_delta / 2).to_value('MHz'):.2f} - "
+        + f"{(central_freq + freq_delta / 2).to_value('MHz'):.2f}) MHz",
+    )
     plt.savefig(outname)
     plt.close()
 
