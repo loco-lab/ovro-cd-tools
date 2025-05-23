@@ -248,6 +248,11 @@ def naive_calibration():
     )
 
     parser.add_argument(
+        "staging_dir",
+        type=Path,
+    )
+
+    parser.add_argument(
         "output_prefix",
         type=Path,
     )
@@ -260,7 +265,9 @@ def naive_calibration():
 
     args = parser.parse_args()
     log.info("Starting Calibration", flush=True)
-    utils.naive_calibration(args.calibration_file_group, args.output_prefix)
+    utils.naive_calibration(
+        args.calibration_file_group, args.staging_dir, args.output_prefix
+    )
     log.info("Calibration Finished", flush=True)
 
 

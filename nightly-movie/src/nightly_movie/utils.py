@@ -143,7 +143,7 @@ def get_calibration_files(file_dict: dict) -> List[Path]:
     return file_group
 
 
-def naive_calibration(file_group: List[Path], output_prefix: Path):
+def naive_calibration(file_group: List[Path], staging_dir: Path, output_prefix: Path):
     """Perform a naive 5 component calibration on a set of files.
 
     This function will find the file where Cas A is closest to zenith.
@@ -160,7 +160,7 @@ def naive_calibration(file_group: List[Path], output_prefix: Path):
     # modify flux by the beam?
     # compute calibration parameters
     log.info("Copying Files for calibration")
-    working_file_group = copy_files(file_group, output_prefix)
+    working_file_group = copy_files(file_group, staging_dir)
     try:
         cal_file = output_prefix / "ateam.cl"
         if not cal_file.exists():
