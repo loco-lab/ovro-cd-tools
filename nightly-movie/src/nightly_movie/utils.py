@@ -6,6 +6,9 @@
 # a gui backend
 # We need to init some casa config things
 
+import logging
+import sys
+
 import matplotlib  # noqa:
 
 matplotlib.use("Agg")  # noqa:
@@ -31,6 +34,15 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import Normalize
 
 from .beam import OVRO_LOCATION, Beam
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(message)s")
+handler.setFormatter(formatter)
+log.addHandler(handler)
 
 TIME_REGEX = re.compile(r".*(?P<date>\d{8})_(?P<hms>\d{6})_(?P<band>\d{2}MHz).ms")
 NAME_REGEX = re.compile(r".*\d{8}_\d{6}_(?P<name>[a-zA-Z]*)-.*\.fits$")
@@ -147,7 +159,7 @@ def naive_calibration(file_group: List[Path], output_prefix: Path):
 
     # modify flux by the beam?
     # compute calibration parameters
-    print("Copying Files for calibration")
+    log.info("Copying Files for calibration")
     working_file_group = copy_files(file_group, output_prefix)
     try:
         cal_file = output_prefix / "ateam.cl"
@@ -171,20 +183,20 @@ def naive_calibration(file_group: List[Path], output_prefix: Path):
             freq = ms_file.getspectralwindowinfo()["0"]["RefFreq"] / 1e6
             ms_file.close()
 
-            print("Loading beam")
-            beam = Beam(freq, obstime)
-            print("Generating component list")
+            log.info("Loading beam")
+            beam = Beam(freq, obstime, log)
+            log.info("Generating component list")
             generate_componentlist(cal_file, beam)
 
-        print("Running AoFlagger")
+        log.info("Running AoFlagger")
         run_aoflagger(working_file_group, Path("/lustre/mkolopanis/LWA_opt_GH1.lua"))
 
-        print("Getting bad antennas")
+        log.info("Getting bad antennas")
         bad_ants = get_bad_ants()
         if bad_ants != "":
-            print(f"Flagging antennas: {bad_ants}")
+            log.info(f"Flagging antennas: {bad_ants}")
 
-        print("Performing Calibration")
+        log.info("Performing Calibration")
         calibration_function = partial(
             perform_cal,
             bad_ants=bad_ants,
@@ -194,7 +206,7 @@ def naive_calibration(file_group: List[Path], output_prefix: Path):
         for filename in working_file_group:
             calibration_function(filename)
     finally:
-        print("Removing calibration files")
+        log.info("Removing calibration files")
         for path in working_file_group:
             shutil.rmtree(path)
 

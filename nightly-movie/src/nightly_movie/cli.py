@@ -27,6 +27,9 @@ class DefaultRaw(
     pass
 
 
+log = utils.log
+
+
 DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 COMPONENT_LIST = str(Path("/lustre/mkolopanis/movies") / "ovro_ateam.cl")
 
@@ -76,7 +79,7 @@ def image_snapshot():
     )
 
     args = parser.parse_args()
-    print(f"{Time.now().iso}: Starting Image Snapshot", flush=True)
+    log.info("Starting Image Snapshot")
 
     central_time = args.central_time
     file_group = args.file_group
@@ -84,9 +87,9 @@ def image_snapshot():
     output_prefix = args.output_prefix
     bcal = args.bcal
 
-    print(f"Working on {args.central_time.iso}")
+    log.info(f"Working on {args.central_time.iso}")
     file_group = utils.get_central_integration(args.file_group, central_time)
-    print("\tCopying Files")
+    log.info("\tCopying Files")
 
     date_dir = staging_prefix.parent
     # make directories in the staging/output area for this node if necessary
@@ -110,11 +113,11 @@ def image_snapshot():
         highband_jpg = str(date_dir / (highband_name_stem + ".jpg"))
         lowband_jpg = str(date_dir / (lowband_name_stem + ".jpg"))
 
-        print(f"{Time.now().iso}: Applying calibration", flush=True)
+        log.info("Applying calibration", flush=True)
         for filename in lowband + highband:
             apply_cal(filename, bcal)
 
-        print(f"{Time.now().iso}: Creating Fits output", flush=True)
+        log.info("Creating Fits output", flush=True)
         subprocess.run(
             WSCLEAN_CMD + f"{highband_image} {' '.join(map(str, highband))}",
             shell=True,
@@ -126,7 +129,7 @@ def image_snapshot():
             check=True,
         )
 
-        print(f"{Time.now().iso}: Plotting jpgs", flush=True)
+        log.info("Plotting jpgs", flush=True)
         for image_type, jpg_name in [
             (highband_image, highband_jpg),
             (lowband_image, lowband_jpg),
@@ -139,7 +142,7 @@ def image_snapshot():
                 jpg_name,
             )
 
-        print(f"{Time.now().iso}: Moving output data products", flush=True)
+        log.info(" Moving output data products", flush=True)
         #  move the fits and jpg files from staging to output
         for fname in itertools.chain(
             date_dir.glob(f"{time_str}*.jpg"), date_dir.glob(f"{time_str}*.fits")
@@ -147,11 +150,11 @@ def image_snapshot():
             shutil.move(fname, output_prefix / fname.name)
 
     finally:
-        print(f"{Time.now().iso}: Removing Raw data files")
+        log.info("Removing Raw data files")
         for path in lowband + highband:
             shutil.rmtree(path)
 
-    print(f"{Time.now().iso}: Image Snapshot Complete", flush=True)
+    log.info("Image Snapshot Complete", flush=True)
 
 
 def create_mp4():
@@ -169,23 +172,23 @@ def create_mp4():
         type=Path,
     )
     args = parser.parse_args()
-    print(f"{Time.now().iso}", flush=True)
+    log.info("Starting Movie stitching")
 
     date_dir = args.date_dir
     staging_date_dir = date_dir.name
 
     fast_dir = f"/fast/mkolopanis/movies/{staging_date_dir}"
-    print(f"{Time.now().iso}: Removing /fast staging areas")
+    log.info("Removing /fast staging areas")
     subprocess.check_output(
         f"pdsh -w lwacalim[00-10] 'if [ -d \"{fast_dir}\" ]; then rm -r {fast_dir}; fi'",
         shell=True,
     )
 
-    print(f"{Time.now().iso}: Cleaning up any remaining flag files")
+    log.info("Cleaning up any remaining flag files")
     for fname in (date_dir / "data").glob("*.flagversions"):
         shutil.rmtree(fname)
 
-    print(f"{Time.now().iso}: Starting Movie Stitching", flush=True)
+    log.info("Starting Movie Stitching", flush=True)
 
     date_str = date_dir.name.replace("-", "")
     for name in ["highband", "lowband"]:
@@ -200,11 +203,11 @@ def create_mp4():
             ),
         ).overwrite_output().run(cmd=str(Path(sys.executable).parent / "ffmpeg"))
 
-    print("Removing intermediate JPG files", flush=True)
+    log.info("Removing intermediate JPG files", flush=True)
     for jpg_file in Path(f"{date_dir}").glob("*.jpg"):
         jpg_file.unlink()
 
-    print("Consolidating Fits Files")
+    log.info("Consolidating Fits Files")
     # combine all the fits files into their own group
     for image_band in ["highband", "lowband"]:
         for pol in ["I", "V"]:
@@ -216,11 +219,11 @@ def create_mp4():
 
                 utils.combine_fits_files(filenames, outfile)
 
-    print("Compressing Logs")
+    log.info("Compressing Logs")
     with tarfile.open(date_dir / "logs.tgz", "w:gz") as tar:
         tar.add(date_dir / "logs", arcname="logs")  # cspell:disable-line
     # remove the individual log files
-    print(f"{Time.now().iso}: Movie Stitching Complete", flush=True)
+    log.info("Movie Stitching Complete", flush=True)
     shutil.rmtree(date_dir / "logs")
 
 
@@ -256,9 +259,9 @@ def naive_calibration():
     )
 
     args = parser.parse_args()
-    print(f"{Time.now().iso}: Starting Calibration", flush=True)
+    log.info("Starting Calibration", flush=True)
     utils.naive_calibration(args.calibration_file_group, args.output_prefix)
-    print(f"{Time.now().iso}: Calibration Finished", flush=True)
+    log.info("Calibration Finished", flush=True)
 
 
 def main():
@@ -328,13 +331,13 @@ def main():
     bcal_exists = utils.check_for_bcal(args.date, sub_bands, bcal_stub)
     # if ew don't have the global calibration files, see if we need to make our own
     if not bcal_exists:
-        print(
+        log.info(
             "No Bandpass calibration found or some are missing. Performing naive calibration."
         )
         bcal_stub = output_prefix
         bcal_exists = utils.check_for_bcal(args.date, sub_bands, bcal_stub)
 
-    print("Grouping data files")
+    log.info("Grouping data files")
     # switch to a central time in a 5min window. Don't use the entire window.
     grouped_data = utils.group_files(filelist, TimeDelta(args.interval * units.min))
 
@@ -346,7 +349,7 @@ def main():
     cal_job_id = None
     if not bcal_exists:
         calibration_file_group = utils.get_calibration_files(grouped_data)
-        print("No bcal files found. generating naive calibration")
+        log.info("No bcal files found. generating naive calibration")
         # create calibration job assign it to job_id
         cal_executable = str(
             Path(sys.executable).parent / "ovro_nightly_naive_calibration"
@@ -359,7 +362,7 @@ def main():
         if status != 0:
             raise ValueError(f"Error spawning calibration job: {cal_job_id}")
         else:
-            print(f"{cal_job_id}")
+            log.info(f"{cal_job_id}")
             # parse the int from the output
             cal_job_id = int(cal_job_id.split(" ")[-1])
 
@@ -382,7 +385,7 @@ def main():
         if status != 0:
             raise ValueError(f"Error spawning image snapshot job: {snapshot_id}")
         else:
-            print(f"{snapshot_id}")
+            log.info(f"{snapshot_id}")
             # parse the int from the output
             snapshot_id = int(snapshot_id.split(" ")[-1])
 
@@ -396,4 +399,4 @@ def main():
     if status != 0:
         raise ValueError(f"Error spawning movie stitching job: {movie_id}")
     else:
-        print(f"{movie_id}")
+        log.info(f"{movie_id}")

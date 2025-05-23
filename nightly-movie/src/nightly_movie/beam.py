@@ -19,7 +19,7 @@ class Beam:
     Last edit: 08 August 2016
     """
 
-    def __init__(self, CRFREQ, obstime):
+    def __init__(self, CRFREQ, obstime, log):
         self.freq = CRFREQ
         self.obstime = obstime
         self.altaz = AltAz(location=OVRO_LOCATION, obstime=self.obstime)
@@ -30,7 +30,7 @@ class Beam:
         # load 4096x4096 grid of IQUV values, for given msfile CRFREQ
         beamIQUVfile = BEAM_FILE_PATH + "/beamIQUV_" + str(CRFREQ) + ".npz"
         if not os.path.exists(beamIQUVfile):
-            print(
+            log.info(
                 f"Beam .npz file does not exist at {CRFREQ}. Using closest existing frequency beam file."
             )
             beamfiles = np.sort(glob.glob(f"{BEAM_FILE_PATH}/beamIQUV_*.npz"))
