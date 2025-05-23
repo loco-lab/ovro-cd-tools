@@ -46,7 +46,7 @@ log.addHandler(handler)
 
 TIME_REGEX = re.compile(r".*(?P<date>\d{8})_(?P<hms>\d{6})_(?P<band>\d{2}MHz).ms")
 NAME_REGEX = re.compile(r".*\d{8}_\d{6}_(?P<name>[a-zA-Z]*)-.*\.fits$")
-ANTNAME_REGEX = re.compile(r"^(?i)(LWA-)?(?P<num>\d{2,3})[AB].*$")
+ANTNAME_REGEX = re.compile(r"(?i)^(LWA-)?(?P<num>\d{2,3})[AB].*$")
 
 ATEAM_SOURCES = {
     name: SkyCoord.from_name(name)
