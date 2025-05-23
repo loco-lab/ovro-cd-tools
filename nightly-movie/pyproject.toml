@@ -5,13 +5,14 @@
 
 [project]
  dependencies = [
-  "astropy",
+  "astropy==5.2.2",
   "casaconfig==1.2.0",
-  "casadata",
-  "casatasks",
-  "etcd3",
-  "ffmpeg-python",
-  "numpy",
+  "casadata==2024.1.15",
+  "casatasks==6.6.3.22",
+  "etcd3==0.12.0",
+  "protobuf==3.20.0",
+  "ffmpeg-python==0.2.0",
+  "numpy==1.24.4",
  ]
  name = "nightly_movie"
  description = """Creates a movie of images from OVRO-LWA raw ms files.
