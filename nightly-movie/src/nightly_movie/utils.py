@@ -102,6 +102,17 @@ def perform_cal(filename: Path, bad_ants: str, cal_file: Path, output_prefix: Pa
         )
 
 
+def run_aoflagger(
+    filenames: List[Path],
+    strategy: Path = Path("/opt/share/aoflagger/strategies/generic-default.lua"),
+):
+    arg_list = ["/opt/bin/aoflagger", "-strategy", str(strategy.absolute()), "-j", "1"]
+    arg_list.extend(map(lambda fname: str(fname.absolute()), filenames))
+
+    subprocess.check_output(arg_list)
+    return
+
+
 def get_calibration_files(file_dict: dict) -> List[Path]:
     obstimes = Time(list(file_dict.keys()))
     ovro_altaz = AltAz(obstime=obstimes, location=OVRO_LOCATION)
@@ -164,6 +175,9 @@ def naive_calibration(file_group: List[Path], output_prefix: Path):
             beam = Beam(freq, obstime)
             print("Generating component list")
             generate_componentlist(cal_file, beam)
+
+        print("Running AoFlagger")
+        run_aoflagger(working_file_group, Path("/lustre/mkolopanis/LWA_opt_GH1.lua"))
 
         print("Getting bad antennas")
         bad_ants = get_bad_ants()
