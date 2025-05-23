@@ -264,6 +264,8 @@ def naive_calibration():
     )
 
     args = parser.parse_args()
+    args.staging_dir.mkdir(parents=True, exist_ok=True)
+
     log.info("Starting Calibration")
     utils.naive_calibration(
         args.calibration_file_group, args.staging_dir, args.output_prefix
@@ -364,7 +366,7 @@ def main():
         cal_log = slurm_logs / "calibration.out"
         status, cal_job_id = subprocess.getstatusoutput(
             f"sbatch --job-name={job_name} --output={str(cal_log)} --mem=20G --cpus-per-task=1 {cal_executable} "
-            f"{str(output_prefix)} {' '.join(map(str, calibration_file_group))}"
+            f"{str(staging_data)} {str(output_prefix)} {' '.join(map(str, calibration_file_group))}"
         )
         if status != 0:
             raise ValueError(f"Error spawning calibration job: {cal_job_id}")
