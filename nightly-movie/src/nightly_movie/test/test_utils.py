@@ -132,6 +132,37 @@ def test_copy_files(tmp_path):
     assert outdata.read_text() == "Hello, World!"
 
 
+def test_copy_files_multi(tmp_path):
+    outdir = tmp_path / "out"
+
+    input_files = []
+    outfiles = []
+    out_data_files = []
+    for directory in ["data.ms", "data_1.ms"]:
+        in_dir = tmp_path / directory
+        input_files.append(in_dir)
+        in_dir.mkdir()
+        infile = in_dir / "test.txt"
+        infile.write_text("Hello, World!")
+
+        outfile = outdir / directory
+        outdata = outfile / "test.txt"
+        outfiles.append(outfile)
+        out_data_files.append(outdata)
+
+        assert infile.exists()
+        assert not outdata.exists()
+
+    copy_output = utils.copy_files(input_files, outdir)
+
+    for outfile, outdata, output_name in zip(outfiles, out_data_files, copy_output):
+        assert outfile.exists()
+        assert outdata.exists()
+        assert output_name == outfile
+
+        assert outdata.read_text() == "Hello, World!"
+
+
 def test_central_int():
     filenames = [
         Path("13MHz/2024-03-23/03/20240323_030006_13MHz.ms"),

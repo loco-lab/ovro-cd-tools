@@ -364,8 +364,8 @@ def copy_files(filenames: List[Path], outdir: Path) -> List[Path]:
     if not outdir.exists():
         outdir.mkdir()
 
-    for inname, outname in zip(filenames, outnames):
-        subprocess.check_output(f"rsync -rz {inname}/ {outname}", shell=True)
+    in_names = " ".join(map(lambda fname: f"{fname}", filenames))
+    subprocess.check_output(f"rsync -rza {in_names} {outdir}", shell=True)
 
     return outnames
 
