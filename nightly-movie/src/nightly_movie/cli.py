@@ -113,11 +113,11 @@ def image_snapshot():
         highband_jpg = str(date_dir / (highband_name_stem + ".jpg"))
         lowband_jpg = str(date_dir / (lowband_name_stem + ".jpg"))
 
-        log.info("Applying calibration", flush=True)
+        log.info("Applying calibration")
         for filename in lowband + highband:
             apply_cal(filename, bcal)
 
-        log.info("Creating Fits output", flush=True)
+        log.info("Creating Fits output")
         subprocess.run(
             WSCLEAN_CMD + f"{highband_image} {' '.join(map(str, highband))}",
             shell=True,
@@ -129,7 +129,7 @@ def image_snapshot():
             check=True,
         )
 
-        log.info("Plotting jpgs", flush=True)
+        log.info("Plotting jpgs")
         for image_type, jpg_name in [
             (highband_image, highband_jpg),
             (lowband_image, lowband_jpg),
@@ -142,7 +142,7 @@ def image_snapshot():
                 jpg_name,
             )
 
-        log.info(" Moving output data products", flush=True)
+        log.info(" Moving output data products")
         #  move the fits and jpg files from staging to output
         for fname in itertools.chain(
             date_dir.glob(f"{time_str}*.jpg"), date_dir.glob(f"{time_str}*.fits")
@@ -154,7 +154,7 @@ def image_snapshot():
         for path in lowband + highband:
             shutil.rmtree(path)
 
-    log.info("Image Snapshot Complete", flush=True)
+    log.info("Image Snapshot Complete")
 
 
 def create_mp4():
@@ -188,7 +188,7 @@ def create_mp4():
     for fname in (date_dir / "data").glob("*.flagversions"):
         shutil.rmtree(fname)
 
-    log.info("Starting Movie Stitching", flush=True)
+    log.info("Starting Movie Stitching")
 
     date_str = date_dir.name.replace("-", "")
     for name in ["highband", "lowband"]:
@@ -203,7 +203,7 @@ def create_mp4():
             ),
         ).overwrite_output().run(cmd=str(Path(sys.executable).parent / "ffmpeg"))
 
-    log.info("Removing intermediate JPG files", flush=True)
+    log.info("Removing intermediate JPG files")
     for jpg_file in Path(f"{date_dir}").glob("*.jpg"):
         jpg_file.unlink()
 
@@ -223,7 +223,7 @@ def create_mp4():
     with tarfile.open(date_dir / "logs.tgz", "w:gz") as tar:
         tar.add(date_dir / "logs", arcname="logs")  # cspell:disable-line
     # remove the individual log files
-    log.info("Movie Stitching Complete", flush=True)
+    log.info("Movie Stitching Complete")
     shutil.rmtree(date_dir / "logs")
 
 
@@ -264,11 +264,11 @@ def naive_calibration():
     )
 
     args = parser.parse_args()
-    log.info("Starting Calibration", flush=True)
+    log.info("Starting Calibration")
     utils.naive_calibration(
         args.calibration_file_group, args.staging_dir, args.output_prefix
     )
-    log.info("Calibration Finished", flush=True)
+    log.info("Calibration Finished")
 
 
 def main():
