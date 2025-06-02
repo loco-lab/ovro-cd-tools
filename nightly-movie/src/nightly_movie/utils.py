@@ -420,7 +420,7 @@ def generate_componentlist(componentlist_name: Path, beam: Beam):
     cl.done()
 
 
-def plot_snapshot(filename: List[Path], outname: str):
+def plot_snapshot(filename: List[Path], outname: str, cal_time_path: Path):
     """Plot the input snapshot with WCS and timestamp"""
 
     if not all(isinstance(f, Path) for f in filename):
@@ -525,7 +525,7 @@ def plot_snapshot(filename: List[Path], outname: str):
     )
 
     # calibration timestamp
-    cal_file = filename[0].parent / "data" / "cal_time.txt"
+    cal_file = cal_time_path / "data" / "cal_time.txt"
     if cal_file.exists():
         cal_timestamp = cal_file.read_text().strip()
     else:

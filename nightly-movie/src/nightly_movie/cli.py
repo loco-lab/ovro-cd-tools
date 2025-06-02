@@ -140,6 +140,7 @@ def image_snapshot():
                     image_type + "-V-dirty.fits",
                 ],
                 jpg_name,
+                output_prefix,
             )
 
         log.info(" Moving output data products")
