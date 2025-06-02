@@ -318,7 +318,13 @@ def main():
     if DATE_REGEX.match(args.date) is None:
         raise ValueError("Input date must be a date in the format YYYY-MM-DD")
 
-    filelist = list(args.data_path.glob(f"*[!13MHz]*/{args.date}/*/*MHz.ms"))
+    # look for data files 0-1 directories down
+    filelist = list(
+        itertools.chain(
+            args.data_path.glob(f"*[!13MHz]*/{args.date}/*/*MHz.ms"),
+            args.data_path.glob(f"*[!13MHz]*/{args.date}/*MHz.ms"),
+        )
+    )
     # an empty list evaluates to false.
     if not filelist:
         raise ValueError(f"Unable to find any data files for: {args.date}")
