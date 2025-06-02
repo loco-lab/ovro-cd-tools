@@ -83,7 +83,13 @@ class Beam:
         np.ndarray:
             Apparent [I, Q, U, V] values of source flux
         """
-        altaz = SkyCoord.from_name(source["label"]).transform_to(self.altaz)
+        try:
+            altaz = SkyCoord.from_name(source["label"]).transform_to(self.altaz)
+        except:
+            # most likely due to our custom sources so we need to parse
+            # the coordinates from the position string
+            altaz = SkyCoord(source["position"][5:]).transform_to(self.altaz)
+
         if altaz.alt.deg >= 10:
             scale = np.array(self.srcIQUV(altaz.az.deg, altaz.alt.deg))
         else:
