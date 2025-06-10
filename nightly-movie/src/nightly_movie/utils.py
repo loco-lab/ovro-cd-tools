@@ -204,6 +204,7 @@ def naive_calibration(file_group: List[Path], staging_dir: Path, output_prefix: 
             output_prefix=output_prefix,
         )
         for filename in working_file_group:
+            log.info(f"calibrating: {filename}")
             calibration_function(filename)
     finally:
         log.info("Removing calibration files")
